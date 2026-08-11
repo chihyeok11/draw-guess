@@ -9,7 +9,7 @@ const io = new Server(server, { cors: { origin: "*" } });
 app.use(express.static(__dirname));
 
 // 제시어 목록
-const words = [
+const defaultWords = [
     // 동물
     "강아지", "고양이", "호랑이", "사자", "토끼", "다람쥐", "펭귄", "돌고래", "상어", "문어", "오징어", "기린", "코끼리", "팬더", "늑대", "여우", "원숭이", "공룡", "카멜레온", "독수리",
     // 음식
@@ -50,13 +50,13 @@ io.on('connection', (socket) => {
             players: [],
             drawerIndex: -1,
             currentWord: "",
+            usedWords: [], // 방별 사용한 제시어 저장 배열
             timer: null,
             timeLeft: 60,
             isPlaying: false,
             isTurnActive: false,
             settings: {
-                maxTime: 60,
-                maxRounds: 3
+                maxTime: 60
             }
         };
 
@@ -125,9 +125,20 @@ io.on('connection', (socket) => {
 
         room.drawerIndex = (room.drawerIndex + 1) % room.players.length;
         const drawer = room.players[room.drawerIndex];
-        room.currentWord = words[Math.floor(Math.random() * words.length)];
 
-        // 글자 수만큼 'ㅡ ' 반복 생성 (예: 'ㅡ ㅡ ㅡ')
+        // 🚫 중복 제시어 제외 로직
+        let availableWords = defaultWords.filter(w => !room.usedWords.includes(w));
+        
+        // 모든 제시어를 다 사용했을 경우 리셋
+        if (availableWords.length === 0) {
+            room.usedWords = [];
+            availableWords = [...defaultWords];
+        }
+
+        const selectedWord = availableWords[Math.floor(Math.random() * availableWords.length)];
+        room.currentWord = selectedWord;
+        room.usedWords.push(selectedWord); // 사용 기록 추가
+
         const hintMask = Array(room.currentWord.length).fill('ㅡ').join(' ');
 
         io.to(roomCode).emit('clearCanvas');
@@ -135,7 +146,7 @@ io.on('connection', (socket) => {
             drawerId: drawer.id,
             drawerNick: drawer.nickname,
             timeLeft: room.timeLeft,
-            hintMask: hintMask // 힌트 텍스트 전달
+            hintMask: hintMask
         });
 
         io.to(drawer.id).emit('yourWord', room.currentWord);
@@ -148,12 +159,14 @@ io.on('connection', (socket) => {
                 clearInterval(room.timer);
                 room.isTurnActive = false;
 
+                // 💡 시간 초과 시 정답 공개
                 io.to(roomCode).emit('chatMessage', { system: true, text: `⏰ 시간 초과! 정답은 [${room.currentWord}]였습니다.` });
                 setTimeout(() => nextTurn(roomCode), 3000);
             }
         }, 1000);
     }
 
+    // 그림 그리기 데이터 전송
     socket.on('draw', (drawData) => {
         const room = rooms[currentRoom];
         if (!room || !room.isPlaying || !room.isTurnActive) return;
@@ -161,6 +174,17 @@ io.on('connection', (socket) => {
         const currentDrawer = room.players[room.drawerIndex];
         if (currentDrawer && currentDrawer.id === socket.id) {
             socket.to(currentRoom).emit('draw', drawData);
+        }
+    });
+
+    // ↩️/↪️ 뒤로 가기 / 다시 실행 동기화
+    socket.on('syncCanvasHistory', (action) => {
+        const room = rooms[currentRoom];
+        if (!room || !room.isPlaying || !room.isTurnActive) return;
+
+        const currentDrawer = room.players[room.drawerIndex];
+        if (currentDrawer && currentDrawer.id === socket.id) {
+            socket.to(currentRoom).emit('syncCanvasHistory', action);
         }
     });
 
@@ -174,12 +198,14 @@ io.on('connection', (socket) => {
         }
     });
 
+    // 정답 체크 & 메시지 처리
     socket.on('sendMessage', (msg) => {
         const room = rooms[currentRoom];
         if (!room) return;
 
         const isDrawer = room.players[room.drawerIndex]?.id === socket.id;
 
+        // 정답 판정
         if (room.isPlaying && room.isTurnActive && !isDrawer && msg.trim() === room.currentWord) {
             room.isTurnActive = false;
             clearInterval(room.timer);
@@ -188,9 +214,14 @@ io.on('connection', (socket) => {
             if (player) player.score += 100;
 
             io.to(currentRoom).emit('updatePlayers', { players: room.players, hostId: room.hostId });
-            io.to(currentRoom).emit('chatMessage', { system: true, text: `🎉 [${nickname}]님이 정답을 맞추셨습니다! (+100점)` });
+            
+            // 💡 정답 공개 및 맞춘 유저 방송
+            io.to(currentRoom).emit('correctAnswer', {
+                winnerNick: nickname,
+                word: room.currentWord
+            });
 
-            setTimeout(() => nextTurn(currentRoom), 2000);
+            setTimeout(() => nextTurn(currentRoom), 3000);
         } else {
             io.to(currentRoom).emit('chatMessage', { nickname: nickname, text: msg });
         }
