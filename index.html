@@ -13,47 +13,81 @@
     .screen { display: none; width: 100%; height: 100%; }
     .screen.active { display: block; }
     
-    /* 1. 로비 화면 */
-    #lobby-screen { background: linear-gradient(135deg, #6e8efb, #a777e3); color: white; text-align: center; }
-    .lobby-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: #333; padding: 35px; border-radius: 12px; width: 340px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-    .lobby-box h1 { margin-bottom: 20px; color: #4e54c8; font-size: 24px; }
-    .lobby-box input { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 6px; outline: none; }
-    .btn-group { display: flex; gap: 10px; margin-top: 5px; }
-    button { flex: 1; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; background: #4e54c8; color: white; font-size: 14px; }
-    button:hover { opacity: 0.9; }
+    /* 1. 로비 화면 (중앙 카드 고정) */
+    #lobby-screen { background: linear-gradient(135deg, #6e8efb, #a777e3); position: relative; }
+    .lobby-box { 
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+        background: white; color: #333; padding: 35px 30px; border-radius: 16px; 
+        width: 360px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center;
+    }
+    .lobby-box h1 { margin-bottom: 25px; color: #4e54c8; font-size: 26px; font-weight: bold; }
+    .lobby-box input { 
+        width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ddd; 
+        border-radius: 8px; outline: none; font-size: 14px; box-sizing: border-box;
+    }
+    .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+    button { 
+        flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; 
+        font-weight: bold; background: #4e54c8; color: white; font-size: 14px; transition: 0.2s;
+    }
+    button:hover { background: #3f43a6; }
 
     /* 2. 게임 화면 */
     #game-screen { position: relative; width: 100%; height: 100%; }
     
-    header { height: 50px; background: #fff; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-sizing: border-box; }
+    header { 
+        height: 50px; background: #fff; border-bottom: 1px solid #eee; 
+        display: flex; justify-content: space-between; align-items: center; 
+        padding: 0 20px; box-sizing: border-box; 
+    }
     .room-info { font-weight: bold; font-size: 15px; }
     .word-box { font-size: 18px; font-weight: bold; color: #ff4757; background: #ffeae6; padding: 4px 16px; border-radius: 20px; }
     .timer-box { font-size: 16px; font-weight: bold; color: #2ed573; }
 
-    /* 사이드바 (플레이어 목록 & 게임 시작 버튼) */
-    .sidebar { position: absolute; top: 50px; left: 0; width: 180px; height: 600px; background: #f8f9fa; border-right: 1px solid #eee; padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; }
+    /* 사이드바 */
+    .sidebar { 
+        position: absolute; top: 50px; left: 0; width: 180px; height: 600px; 
+        background: #f8f9fa; border-right: 1px solid #eee; padding: 12px; 
+        box-sizing: border-box; display: flex; flex-direction: column; 
+    }
     #player-list { flex: 1; overflow-y: auto; }
-    .player-card { background: white; padding: 8px 10px; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+    .player-card { 
+        background: white; padding: 8px 10px; border-radius: 6px; border: 1px solid #ddd; 
+        margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; 
+    }
     .player-card.drawing { border: 2px solid #ff4757; background: #fff0f0; }
-    #btn-start { height: 42px; margin-top: 10px; flex: none; font-size: 14px; }
+    #btn-start { height: 40px; flex: none; font-size: 14px; border-radius: 6px; }
 
     /* 캔버스 영역 */
     .canvas-area { position: absolute; top: 50px; left: 180px; width: 520px; height: 600px; background: #fff; }
     #canvas { width: 520px; height: 550px; background: #fff; display: block; cursor: crosshair; }
     
-    /* 하단 툴바 */
-    .toolbar { height: 50px; background: #fafafa; border-top: 1px solid #eee; display: flex; align-items: center; padding: 0 10px; gap: 6px; box-sizing: border-box; }
-    .tool-btn { padding: 6px 10px; background: #fff; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; color: #333; }
+    /* 하단 툴바 (높이 및 여백 정렬) */
+    .toolbar { 
+        height: 50px; background: #fafafa; border-top: 1px solid #eee; 
+        display: flex; align-items: center; padding: 0 8px; gap: 6px; box-sizing: border-box; 
+    }
+    .tool-btn { 
+        height: 34px; padding: 0 8px; background: #fff; border: 1px solid #ccc; 
+        border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; 
+        color: #333; display: flex; align-items: center; justify-content: center; white-space: nowrap;
+    }
     .tool-btn.active { background: #2ed573; color: white; border-color: #2ed573; }
+    .color-picker { width: 34px; height: 34px; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; padding: 0; background: none; }
+    .line-width { width: 70px; }
 
     /* 채팅 영역 */
-    .chat-area { position: absolute; top: 50px; left: 700px; width: 250px; height: 600px; border-left: 1px solid #eee; background: #fff; display: flex; flex-direction: column; }
+    .chat-area { 
+        position: absolute; top: 50px; left: 700px; width: 250px; height: 600px; 
+        border-left: 1px solid #eee; background: #fff; display: flex; flex-direction: column; 
+    }
     .chat-messages { flex: 1; padding: 10px; overflow-y: auto; font-size: 12px; display: flex; flex-direction: column; gap: 6px; }
     .chat-msg { background: #f1f2f6; padding: 6px 10px; border-radius: 6px; word-break: break-all; }
     .chat-msg.system { background: #eccc68; font-weight: bold; text-align: center; }
     .chat-msg.correct { background: #2ed573; color: white; font-weight: bold; text-align: center; }
     .chat-input-box { height: 50px; padding: 8px; border-top: 1px solid #eee; display: flex; gap: 4px; box-sizing: border-box; }
-    .chat-input-box input { flex: 1; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; outline: none; font-size: 12px; }
+    .chat-input-box input { flex: 1; padding: 6px 8px; border: 1px solid #ccc; border-radius: 6px; outline: none; font-size: 12px; }
+    .chat-input-box button { height: 34px; padding: 0 10px; border-radius: 6px; }
 
     /* 정답 알림 팝업 */
     .correct-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: none; justify-content: center; align-items: center; z-index: 100; }
