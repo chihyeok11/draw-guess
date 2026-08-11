@@ -62,7 +62,7 @@ io.on('connection', (socket) => {
 
         rooms[roomCode].players.push({ id: socket.id, nickname: nickname, score: 0 });
 
-        socket.emit('joinSuccess', { roomCode, nickname });
+        socket.emit('joinSuccess', { roomCode, nickname, isPlaying: rooms[roomCode].isPlaying });
         io.to(roomCode).emit('updatePlayers', rooms[roomCode].players);
         io.to(roomCode).emit('chatMessage', { system: true, text: `${nickname}님이 입장하셨습니다.` });
     }
@@ -71,6 +71,8 @@ io.on('connection', (socket) => {
     socket.on('startGame', () => {
         const room = rooms[currentRoom];
         if (!room || room.players.length < 1) return;
+        
+        io.to(currentRoom).emit('gameStarted');
         nextTurn(currentRoom);
     });
 
