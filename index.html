@@ -190,21 +190,41 @@
     let canvasHistory = [];
     let historyStep = -1;
 
+    // 🛠️ 캔버스 크기 조절 (안전성 검사 추가)
     function resizeCanvas() {
-        const rect = canvas.parentElement.getBoundingClientRect();
-        const toolbarHeight = document.getElementById('toolbar').offsetHeight;
-        canvas.width = rect.width;
-        canvas.height = rect.height - toolbarHeight;
-        saveCanvasState();
+        const parent = canvas.parentElement;
+        if (!parent) return;
+
+        const rect = parent.getBoundingClientRect();
+        const toolbar = document.getElementById('toolbar');
+        const toolbarHeight = toolbar ? toolbar.offsetHeight : 50;
+
+        const newWidth = Math.max(1, Math.floor(rect.width));
+        const newHeight = Math.max(1, Math.floor(rect.height - toolbarHeight));
+
+        if (newWidth > 0 && newHeight > 0) {
+            canvas.width = newWidth;
+            canvas.height = newHeight;
+            saveCanvasState();
+        }
     }
     window.addEventListener('resize', resizeCanvas);
 
+    // 🛠️ 캔버스 상태 저장 (0px 에러 방지 구문 추가)
     function saveCanvasState() {
-        historyStep++;
-        if (historyStep < canvasHistory.length) {
-            canvasHistory.length = historyStep;
+        if (!canvas.width || !canvas.height || canvas.width <= 0 || canvas.height <= 0) {
+            return;
         }
-        canvasHistory.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+
+        try {
+            historyStep++;
+            if (historyStep < canvasHistory.length) {
+                canvasHistory.length = historyStep;
+            }
+            canvasHistory.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+        } catch (e) {
+            console.warn("Canvas state save skipped:", e);
+        }
     }
 
     function undo() {
@@ -251,6 +271,8 @@
 
     // 🪣 페인트통(BFS Flood Fill)
     function floodFill(startX, startY, fillColorHex) {
+        if (canvas.width <= 0 || canvas.height <= 0) return;
+
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = imgData.data;
 
@@ -392,12 +414,16 @@
         displayRoomCode.innerText = code;
     });
 
+    // 🛠️ 방 입장 성공 시 렌더링 안정화 처리
     socket.on('joinSuccess', ({ roomCode, isHost }) => {
         lobbyScreen.classList.remove('active');
         gameScreen.classList.add('active');
         displayRoomCode.innerText = roomCode;
         if (isHost) btnStart.style.display = 'block';
-        resizeCanvas();
+
+        requestAnimationFrame(() => {
+            resizeCanvas();
+        });
     });
 
     socket.on('updatePlayers', ({ players, hostId }) => {
