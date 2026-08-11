@@ -30,7 +30,6 @@
         .player-item { padding: 8px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
         .host-badge { background: #ffc107; color: #000; font-size: 11px; padding: 2px 5px; border-radius: 4px; font-weight: bold; margin-left: 5px; }
         
-        /* 그림 도구 스타일 */
         .tools-panel { margin-top: 10px; display: none; flex-direction: column; gap: 10px; align-items: center; background: #f8f9fa; padding: 12px; border-radius: 8px; }
         .tool-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; align-items: center; width: 100%; }
         .color-palette { display: flex; gap: 4px; flex-wrap: wrap; max-width: 280px; justify-content: center; }
@@ -40,20 +39,21 @@
         .mode-btn.active { background: #007bff; color: #fff; font-weight: bold; }
         .room-tag { background: #e7f3ff; color: #007bff; padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 16px; display: inline-block; margin-bottom: 10px; }
         
-        /* 슬라이더 컨트롤 스타일 */
         .slider-container { display: flex; align-items: center; gap: 8px; background: #fff; padding: 4px 12px; border-radius: 20px; border: 1px solid #ddd; }
         .stroke-slider { -webkit-appearance: none; width: 100px; height: 6px; border-radius: 3px; background: #ddd; outline: none; }
         .stroke-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #007bff; cursor: pointer; }
         .size-preview-dot { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; }
         .dot { border-radius: 50%; background-color: #000; display: inline-block; transition: all 0.1s; }
         .waiting-text { color: #666; font-size: 13px; font-style: italic; margin-top: 10px; }
+        
+        .hint-badge { color: #d9534f; font-weight: bold; font-size: 20px; letter-spacing: 2px; }
     </style>
 </head>
 <body>
 
     <!-- 로비 화면 -->
     <div id="setupBox" class="setup-box">
-        <h2>🎨 Draw, Guess</h2>
+        <h2>🎨 Draw, Guess 로비</h2>
         
         <div class="tab-buttons">
             <button id="btnTabCreate" class="tab-btn active" onclick="switchTab('create')">방 만들기</button>
@@ -81,7 +81,6 @@
             <h3>👥 참가자 목록</h3>
             <div id="playerList"></div>
             <br>
-            <!-- 방장 전용 게임 시작 버튼 영역 -->
             <div id="hostControls">
                 <button id="btnStartGame" onclick="startGame()" style="width: 100%; background: #28a745; padding: 10px; font-size: 16px;">게임 시작 🚀</button>
             </div>
@@ -95,17 +94,13 @@
             <h3>⏱️ 남은 시간: <span id="timer">60</span>초</h3>
             <canvas id="canvas" width="480" height="340"></canvas>
             
-            <!-- 그림판 도구 -->
             <div id="controls" class="tools-panel">
-                <!-- 색상 선택 -->
                 <div class="color-palette" id="palette"></div>
                 
-                <!-- 도구 및 슬라이더 굵기 조절 -->
                 <div class="tool-row">
                     <button id="btnPen" class="mode-btn active" onclick="setPen()">펜 ✏️</button>
                     <button id="btnEraser" class="mode-btn" onclick="setEraser()">지우개 🧹</button>
                     
-                    <!-- 굵기 스와이프 슬라이더 -->
                     <div class="slider-container">
                         <input type="range" id="sizeRange" class="stroke-slider" min="1" max="40" value="5" oninput="updateLineWidth(this.value)">
                         <div class="size-preview-dot">
@@ -229,7 +224,7 @@
             }).join('');
         });
 
-        socket.on('turnStart', ({ drawerId, drawerNick, timeLeft }) => {
+        socket.on('turnStart', ({ drawerId, drawerNick, timeLeft, hintMask }) => {
             isDrawer = (socket.id === drawerId);
             document.getElementById('timer').innerText = timeLeft;
             
@@ -239,7 +234,7 @@
                 selectColor('#000000');
             } else {
                 document.getElementById('controls').style.display = 'none';
-                document.getElementById('turnInfo').innerText = `🎨 [${drawerNick}]님이 그림을 그리는 중입니다!`;
+                document.getElementById('turnInfo').innerHTML = `🎨 [${drawerNick}]님이 그림을 그리는 중입니다!<br><span class="hint-badge">${hintMask}</span>`;
             }
         });
 
@@ -251,7 +246,6 @@
             document.getElementById('timer').innerText = time;
         });
 
-        // 색상 및 슬라이더 조절
         function selectColor(color, btnElem) {
             setPen();
             lastPenColor = color;
