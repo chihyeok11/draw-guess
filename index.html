@@ -1,401 +1,504 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Draw, Guess</title>
-    <script src="/socket.io/socket.io.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catch Mind - Catch & Draw</title>
     <style>
-        body { font-family: 'Malgun Gothic', sans-serif; background-color: #f0f2f5; text-align: center; margin: 0; padding: 15px; touch-action: manipulation; }
-        .setup-box { background: white; padding: 25px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-top: 30px; width: 90%; max-width: 320px; box-sizing: border-box; }
-        .tab-buttons { display: flex; gap: 10px; margin-bottom: 20px; }
-        .tab-btn { flex: 1; padding: 10px; border: none; background: #e0e0e0; cursor: pointer; border-radius: 6px; font-weight: bold; }
-        .tab-btn.active { background: #007bff; color: white; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', 'Noto Sans KR', sans-serif; }
+        body { background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
         
-        .game-layout { display: none; flex-direction: column; align-items: center; gap: 15px; max-width: 1000px; margin: 0 auto; }
-        @media (min-width: 768px) {
-            .game-layout { flex-direction: row; justify-content: center; align-items: flex-start; }
+        #app { width: 1000px; height: 680px; background: #fff; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        
+        .screen { display: none; width: 100%; height: 100%; }
+        .screen.active { display: flex; }
+        #lobby-screen { flex-direction: column; justify-content: center; align-items: center; gap: 20px; background: linear-gradient(135deg, #6e8efb, #a777e3); color: white; }
+        .lobby-card { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 16px; color: #333; width: 360px; text-align: center; box-shadow: 0 8px 16px rgba(0,0,0,0.2); }
+        .lobby-card h1 { margin-bottom: 20px; color: #4a4a4a; font-size: 26px; }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; font-size: 13px; color: #666; margin-bottom: 5px; font-weight: bold; }
+        .input-group input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; outline: none; }
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+        button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 14px; }
+        .btn-primary { background: #4e54c8; color: white; }
+        .btn-primary:hover { background: #3f43a6; }
+        .btn-secondary { background: #e0e0e0; color: #333; }
+        .btn-secondary:hover { background: #d0d0d0; }
+
+        #game-screen { display: none; flex-direction: column; }
+        header { height: 60px; background: #ffffff; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; }
+        .room-info { font-weight: bold; font-size: 18px; color: #333; }
+        .word-box { font-size: 20px; font-weight: 800; color: #ff4757; background: #ffeae6; padding: 6px 16px; border-radius: 20px; }
+        .timer-box { font-size: 18px; font-weight: bold; color: #2ed573; min-width: 60px; text-align: right; }
+
+        .main-container { display: flex; flex: 1; height: calc(100% - 60px); }
+        
+        .sidebar { width: 200px; background: #f8f9fa; border-right: 1px solid #e0e0e0; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .player-card { background: white; padding: 10px 12px; border-radius: 8px; border: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+        .player-card.drawing { border: 2px solid #ff4757; background: #fff0f0; }
+        .player-name { font-weight: bold; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 90px; }
+        .player-score { font-size: 12px; color: #ff6b81; font-weight: bold; }
+        .host-badge { background: #ffa502; color: white; font-size: 10px; padding: 2px 4px; border-radius: 4px; margin-right: 4px; }
+
+        .canvas-area { flex: 1; display: flex; flex-direction: column; background: #eaeaea; position: relative; }
+        #canvas { background: white; cursor: crosshair; flex: 1; }
+        
+        .toolbar { height: 50px; background: #ffffff; border-top: 1px solid #e0e0e0; display: flex; align-items: center; padding: 0 15px; gap: 10px; }
+        .tool-btn { padding: 6px 12px; background: #f1f2f6; border: 1px solid #ced6e0; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 4px; }
+        .tool-btn.active { background: #2ed573; color: white; border-color: #2ed573; }
+        .color-picker { width: 30px; height: 30px; border: none; border-radius: 50%; cursor: pointer; padding: 0; background: none; }
+        .line-width { width: 80px; }
+
+        .chat-area { width: 260px; background: #ffffff; border-left: 1px solid #e0e0e0; display: flex; flex-direction: column; }
+        .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+        .chat-msg { background: #f1f2f6; padding: 8px 12px; border-radius: 8px; max-width: 90%; word-break: break-all; }
+        .chat-msg.system { background: #eccc68; color: #333; font-weight: bold; align-self: center; text-align: center; width: 100%; max-width: 100%; font-size: 12px; }
+        .chat-msg.correct { background: #2ed573; color: white; font-weight: bold; align-self: center; text-align: center; width: 100%; max-width: 100%; font-size: 13px; }
+        .chat-msg .sender { font-weight: bold; margin-bottom: 2px; color: #57606f; }
+        .chat-input-box { padding: 10px; border-top: 1px solid #e0e0e0; display: flex; gap: 5px; }
+        .chat-input-box input { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 6px; outline: none; font-size: 13px; }
+
+        /* 🎉 정답 모션 팝업 */
+        .correct-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(46, 213, 115, 0.2);
+            display: flex; justify-content: center; align-items: center;
+            pointer-events: none; opacity: 0; transition: opacity 0.3s ease; z-index: 10;
         }
-        
-        .left-panel, .right-panel { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 340px; box-sizing: border-box; }
-        .center-panel { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 500px; box-sizing: border-box; }
-        
-        canvas { border: 2px solid #ddd; border-radius: 8px; background: white; cursor: crosshair; touch-action: none; max-width: 100%; height: auto; }
-        .chat-logs { height: 200px; border: 1px solid #ddd; overflow-y: auto; padding: 10px; border-radius: 6px; text-align: left; font-size: 14px; margin-bottom: 10px; }
-        .system-msg { color: #888; font-style: italic; }
-        
-        input, button { padding: 8px 12px; font-size: 14px; border-radius: 6px; border: 1px solid #ccc; }
-        button { background: #007bff; color: white; border: none; cursor: pointer; }
-        button:hover { background: #0056b3; }
-        .player-item { padding: 8px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        .host-badge { background: #ffc107; color: #000; font-size: 11px; padding: 2px 5px; border-radius: 4px; font-weight: bold; margin-left: 5px; }
-        
-        .tools-panel { margin-top: 10px; display: none; flex-direction: column; gap: 10px; align-items: center; background: #f8f9fa; padding: 12px; border-radius: 8px; }
-        .tool-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; align-items: center; width: 100%; }
-        .color-palette { display: flex; gap: 4px; flex-wrap: wrap; max-width: 280px; justify-content: center; }
-        .color-btn { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 3px rgba(0,0,0,0.3); cursor: pointer; }
-        .color-btn.active { transform: scale(1.2); border-color: #333; }
-        .mode-btn { background: #6c757d; font-size: 13px; }
-        .mode-btn.active { background: #007bff; color: #fff; font-weight: bold; }
-        .room-tag { background: #e7f3ff; color: #007bff; padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 16px; display: inline-block; margin-bottom: 10px; }
-        
-        .slider-container { display: flex; align-items: center; gap: 8px; background: #fff; padding: 4px 12px; border-radius: 20px; border: 1px solid #ddd; }
-        .stroke-slider { -webkit-appearance: none; width: 100px; height: 6px; border-radius: 3px; background: #ddd; outline: none; }
-        .stroke-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #007bff; cursor: pointer; }
-        .size-preview-dot { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; }
-        .dot { border-radius: 50%; background-color: #000; display: inline-block; transition: all 0.1s; }
-        .waiting-text { color: #666; font-size: 13px; font-style: italic; margin-top: 10px; }
-        
-        .hint-badge { color: #d9534f; font-weight: bold; font-size: 20px; letter-spacing: 2px; }
+        .correct-overlay.show { opacity: 1; }
+        .correct-banner {
+            background: white; padding: 25px 40px; border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25); text-align: center;
+            transform: scale(0.6); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .correct-overlay.show .correct-banner { transform: scale(1.05); }
+        .correct-banner h2 { font-size: 28px; color: #2ed573; margin-bottom: 8px; }
+        .correct-banner p { font-size: 16px; color: #2f3542; font-weight: bold; }
+        .correct-banner .answer-word { color: #ff4757; font-size: 20px; margin-top: 5px; font-weight: 800; }
     </style>
 </head>
 <body>
 
+<div id="app">
     <!-- 로비 화면 -->
-    <div id="setupBox" class="setup-box">
-        <h2>🎨 Draw, Guess 로비</h2>
-        
-        <div class="tab-buttons">
-            <button id="btnTabCreate" class="tab-btn active" onclick="switchTab('create')">방 만들기</button>
-            <button id="btnTabJoin" class="tab-btn" onclick="switchTab('join')">방 참가하기</button>
-        </div>
-
-        <input type="text" id="userNick" placeholder="닉네임 입력" style="width: 90%; margin-bottom: 15px;"><br>
-
-        <div id="createForm">
-            <button onclick="createRoom()" style="width: 98%; padding: 10px; background: #28a745;">새 방 만들기</button>
-        </div>
-
-        <div id="joinForm" style="display: none;">
-            <input type="text" id="roomCodeInput" placeholder="6자리 방 코드 입력" style="width: 90%; text-transform: uppercase; margin-bottom: 15px;"><br>
-            <button onclick="joinRoom()" style="width: 98%; padding: 10px;">방 참가하기</button>
+    <div id="lobby-screen" class="screen active">
+        <div class="lobby-card">
+            <h1>🎨 Catch & Draw</h1>
+            <div class="input-group">
+                <label>닉네임</label>
+                <input type="text" id="nickname-input" placeholder="닉네임을 입력하세요" maxlength="10">
+            </div>
+            <div class="input-group">
+                <label>방 코드 (입장시)</label>
+                <input type="text" id="roomcode-input" placeholder="6자리 방 코드" maxlength="6">
+            </div>
+            <div class="btn-group">
+                <button class="btn-primary" id="btn-create">방 만들기</button>
+                <button class="btn-secondary" id="btn-join">참가하기</button>
+            </div>
         </div>
     </div>
 
     <!-- 게임 화면 -->
-    <div id="gameLayout" class="game-layout">
-        <div class="left-panel">
-            <div class="room-tag">코드: <span id="displayRoomCode"></span> 
-                <button onclick="copyCode()" style="padding: 2px 6px; font-size: 11px; margin-left: 4px;">복사</button>
-            </div>
-            <h3>👥 참가자 목록</h3>
-            <div id="playerList"></div>
-            <br>
-            <div id="hostControls">
-                <button id="btnStartGame" onclick="startGame()" style="width: 100%; background: #28a745; padding: 10px; font-size: 16px;">게임 시작 🚀</button>
-            </div>
-            <div id="guestWaiting" class="waiting-text" style="display: none;">
-                ⏳ 방장이 게임을 시작하기를 기다리는 중...
-            </div>
-        </div>
+    <div id="game-screen" class="screen">
+        <header>
+            <div class="room-info">방 코드: <span id="display-room-code" style="color: #4e54c8;">------</span></div>
+            <div class="word-box" id="display-word">대기 중...</div>
+            <div class="timer-box" id="display-timer">60초</div>
+        </header>
 
-        <div class="center-panel">
-            <h2 id="turnInfo">대기 중...</h2>
-            <h3>⏱️ 남은 시간: <span id="timer">60</span>초</h3>
-            <canvas id="canvas" width="480" height="340"></canvas>
-            
-            <div id="controls" class="tools-panel">
-                <div class="color-palette" id="palette"></div>
-                
-                <div class="tool-row">
-                    <button id="btnPen" class="mode-btn active" onclick="setPen()">펜 ✏️</button>
-                    <button id="btnEraser" class="mode-btn" onclick="setEraser()">지우개 🧹</button>
-                    
-                    <div class="slider-container">
-                        <input type="range" id="sizeRange" class="stroke-slider" min="1" max="40" value="5" oninput="updateLineWidth(this.value)">
-                        <div class="size-preview-dot">
-                            <span id="previewDot" class="dot" style="width: 5px; height: 5px;"></span>
-                        </div>
-                        <span id="sizeText" style="font-size: 12px; color: #555; width: 28px;">5px</span>
+        <div class="main-container">
+            <div class="sidebar">
+                <div style="font-weight: bold; font-size: 14px; color: #666; margin-bottom: 5px;">플레이어</div>
+                <div id="player-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                <button class="btn-primary" id="btn-start" style="margin-top: auto; display: none;">게임 시작</button>
+            </div>
+
+            <div class="canvas-area">
+                <!-- 정답 오버레이 팝업 -->
+                <div class="correct-overlay" id="correct-overlay">
+                    <div class="correct-banner">
+                        <h2>🎉 정답입니다!</h2>
+                        <p id="correct-text">닉네임님이 정답을 맞추셨습니다!</p>
+                        <div class="answer-word" id="correct-word">정답: ---</div>
                     </div>
+                </div>
 
-                    <button onclick="clearCanvas()" style="background: #dc3545; font-size: 12px; padding: 6px 10px;">전체 지우기 🗑️</button>
+                <canvas id="canvas"></canvas>
+                
+                <div class="toolbar" id="toolbar">
+                    <button class="tool-btn active" id="tool-pen">✏️ 펜</button>
+                    <button class="tool-btn" id="tool-bucket">🪣 페인트통</button>
+                    <input type="color" id="color-picker" class="color-picker" value="#000000">
+                    <input type="range" id="line-width" class="line-width" min="2" max="30" value="4">
+                    <div style="flex: 1;"></div>
+                    <button class="tool-btn" id="btn-undo">↩️ 뒤로</button>
+                    <button class="tool-btn" id="btn-redo">↪️ 앞으로</button>
+                    <button class="tool-btn" id="btn-clear" style="color: #ff4757;">🗑️ 전체 지우기</button>
+                </div>
+            </div>
+
+            <div class="chat-area">
+                <div class="chat-messages" id="chat-messages"></div>
+                <div class="chat-input-box">
+                    <input type="text" id="chat-input" placeholder="정답 또는 채팅 입력..." maxlength="50">
+                    <button class="btn-primary" id="btn-send" style="padding: 8px 12px; flex: none;">전송</button>
                 </div>
             </div>
         </div>
-
-        <div class="right-panel">
-            <h3>💬 채팅 & 정답</h3>
-            <div id="chatLogs" class="chat-logs"></div>
-            <div style="display: flex; gap: 5px;">
-                <input type="text" id="chatInput" placeholder="정답/채팅 입력" style="flex: 1;" onkeyup="if(window.event.keyCode==13) sendChat()">
-                <button onclick="sendChat()">전송</button>
-            </div>
-        </div>
     </div>
+</div>
 
-    <script>
-        const socket = io();
-        let isDrawer = false;
-        let isDrawing = false;
-        let isHost = false;
-        let lastPenColor = '#000000';
-        let strokeColor = '#000000';
-        let lineWidth = 5;
-        let isEraser = false;
-        let currentRoomCode = '';
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io();
 
-        const colors = ['#000000', '#ff0000', '#0000ff', '#008000', '#ffff00', '#ffa500', '#800080', '#ff1493', '#8b4513', '#808080'];
+    const lobbyScreen = document.getElementById('lobby-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const nicknameInput = document.getElementById('nickname-input');
+    const roomcodeInput = document.getElementById('roomcode-input');
+    const btnCreate = document.getElementById('btn-create');
+    const btnJoin = document.getElementById('btn-join');
+    const displayRoomCode = document.getElementById('display-room-code');
+    const displayWord = document.getElementById('display-word');
+    const displayTimer = document.getElementById('display-timer');
+    const playerList = document.getElementById('player-list');
+    const btnStart = document.getElementById('btn-start');
+    const chatMessages = document.getElementById('chat-messages');
+    const chatInput = document.getElementById('chat-input');
+    const btnSend = document.getElementById('btn-send');
 
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const toolPen = document.getElementById('tool-pen');
+    const toolBucket = document.getElementById('tool-bucket');
+    const colorPicker = document.getElementById('color-picker');
+    const lineWidthInput = document.getElementById('line-width');
+    const btnUndo = document.getElementById('btn-undo');
+    const btnRedo = document.getElementById('btn-redo');
+    const btnClear = document.getElementById('btn-clear');
+    const correctOverlay = document.getElementById('correct-overlay');
+    const correctText = document.getElementById('correct-text');
+    const correctWord = document.getElementById('correct-word');
+
+    let myNickname = '';
+    let isMyTurn = false;
+    let isDrawing = false;
+    let currentTool = 'pen';
+    
+    // Undo / Redo 히스토리
+    let canvasHistory = [];
+    let historyStep = -1;
+
+    function resizeCanvas() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        const toolbarHeight = document.getElementById('toolbar').offsetHeight;
+        canvas.width = rect.width;
+        canvas.height = rect.height - toolbarHeight;
+        saveCanvasState();
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    function saveCanvasState() {
+        historyStep++;
+        if (historyStep < canvasHistory.length) {
+            canvasHistory.length = historyStep;
+        }
+        canvasHistory.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    }
+
+    function undo() {
+        if (historyStep > 0) {
+            historyStep--;
+            ctx.putImageData(canvasHistory[historyStep], 0, 0);
+            if (isMyTurn) socket.emit('syncCanvasHistory', 'undo');
+        }
+    }
+
+    function redo() {
+        if (historyStep < canvasHistory.length - 1) {
+            historyStep++;
+            ctx.putImageData(canvasHistory[historyStep], 0, 0);
+            if (isMyTurn) socket.emit('syncCanvasHistory', 'redo');
+        }
+    }
+
+    // 🔊 딩동댕 효과음 재생 (웹 오디오 API)
+    function playCorrectSound() {
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            const audioCtx = new AudioContext();
+            const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+            
+            notes.forEach((freq, index) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime + index * 0.12);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + index * 0.12 + 0.3);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start(audioCtx.currentTime + index * 0.12);
+                osc.stop(audioCtx.currentTime + index * 0.12 + 0.3);
+            });
+        } catch (e) {
+            console.log("Audio Error:", e);
+        }
+    }
+
+    // 🪣 페인트통(BFS Flood Fill)
+    function floodFill(startX, startY, fillColorHex) {
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imgData.data;
+
+        const r = parseInt(fillColorHex.slice(1, 3), 16);
+        const g = parseInt(fillColorHex.slice(3, 5), 16);
+        const b = parseInt(fillColorHex.slice(5, 7), 16);
+
+        const targetPos = (startY * canvas.width + startX) * 4;
+        const startR = data[targetPos];
+        const startG = data[targetPos + 1];
+        const startB = data[targetPos + 2];
+        const startA = data[targetPos + 3];
+
+        if (startR === r && startG === g && startB === b) return;
+
+        const queue = [[startX, startY]];
+        
+        while (queue.length > 0) {
+            const [x, y] = queue.pop();
+            const pos = (y * canvas.width + x) * 4;
+
+            if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) continue;
+
+            if (data[pos] === startR && data[pos + 1] === startG && data[pos + 2] === startB && data[pos + 3] === startA) {
+                data[pos] = r;
+                data[pos + 1] = g;
+                data[pos + 2] = b;
+                data[pos + 3] = 255;
+
+                queue.push([x + 1, y]);
+                queue.push([x - 1, y]);
+                queue.push([x, y + 1]);
+                queue.push([x, y - 1]);
+            }
+        }
+        ctx.putImageData(imgData, 0, 0);
+    }
+
+    // 로비 버튼 이벤트
+    btnCreate.addEventListener('click', () => {
+        myNickname = nicknameInput.value.trim();
+        if (!myNickname) return alert('닉네임을 입력하세요.');
+        socket.emit('createRoom', { userNick: myNickname });
+    });
+
+    btnJoin.addEventListener('click', () => {
+        myNickname = nicknameInput.value.trim();
+        const code = roomcodeInput.value.trim();
+        if (!myNickname || !code) return alert('닉네임과 방 코드를 입력하세요.');
+        socket.emit('joinRoom', { roomCode: code, userNick: myNickname });
+    });
+
+    btnStart.addEventListener('click', () => {
+        socket.emit('startGame');
+    });
+
+    // 마우스 그리기 이벤트
+    canvas.addEventListener('mousedown', (e) => {
+        if (!isMyTurn) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const x = Math.floor(e.clientX - rect.left);
+        const y = Math.floor(e.clientY - rect.top);
+
+        if (currentTool === 'bucket') {
+            floodFill(x, y, colorPicker.value);
+            saveCanvasState();
+            socket.emit('draw', { type: 'bucket', x, y, color: colorPicker.value });
+        } else {
+            isDrawing = true;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            socket.emit('draw', {
+                type: 'start',
+                x, y,
+                color: colorPicker.value,
+                lineWidth: lineWidthInput.value
+            });
+        }
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+        if (!isDrawing || !isMyTurn || currentTool !== 'pen') return;
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        ctx.strokeStyle = colorPicker.value;
+        ctx.lineWidth = lineWidthInput.value;
         ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
+        ctx.lineTo(x, y);
+        ctx.stroke();
 
-        const palette = document.getElementById('palette');
-        colors.forEach(color => {
-            const btn = document.createElement('button');
-            btn.className = 'color-btn';
-            btn.style.backgroundColor = color;
-            btn.onclick = () => selectColor(color, btn);
-            palette.appendChild(btn);
-        });
+        socket.emit('draw', { type: 'move', x, y });
+    });
 
-        function switchTab(tab) {
-            document.getElementById('btnTabCreate').classList.toggle('active', tab === 'create');
-            document.getElementById('btnTabJoin').classList.toggle('active', tab === 'join');
-            document.getElementById('createForm').style.display = tab === 'create' ? 'block' : 'none';
-            document.getElementById('joinForm').style.display = tab === 'join' ? 'block' : 'none';
-        }
-
-        function createRoom() {
-            const userNick = document.getElementById('userNick').value.trim();
-            if (!userNick) return alert('닉네임을 입력해주세요!');
-            socket.emit('createRoom', { userNick });
-        }
-
-        function joinRoom() {
-            const userNick = document.getElementById('userNick').value.trim();
-            const roomCode = document.getElementById('roomCodeInput').value.trim();
-            if (!userNick) return alert('닉네임을 입력해주세요!');
-            if (!roomCode) return alert('방 코드를 입력해주세요!');
-            socket.emit('joinRoom', { roomCode, userNick });
-        }
-
-        socket.on('joinSuccess', ({ roomCode, isPlaying, isHost: hostStatus }) => {
-            currentRoomCode = roomCode;
-            isHost = hostStatus;
-            document.getElementById('displayRoomCode').innerText = roomCode;
-            document.getElementById('setupBox').style.display = 'none';
-            document.getElementById('gameLayout').style.display = 'flex';
-            
-            updateHostUI();
-        });
-
-        socket.on('youAreHost', () => {
-            isHost = true;
-            updateHostUI();
-        });
-
-        function updateHostUI() {
-            if (isHost) {
-                document.getElementById('hostControls').style.display = 'block';
-                document.getElementById('guestWaiting').style.display = 'none';
-                document.getElementById('turnInfo').innerText = '방장님, 게임 시작 버튼을 눌러주세요!';
-            } else {
-                document.getElementById('hostControls').style.display = 'none';
-                document.getElementById('guestWaiting').style.display = 'block';
-                document.getElementById('turnInfo').innerText = '방장이 게임을 시작하기를 기다리는 중입니다...';
-            }
-        }
-
-        socket.on('errorMessage', (msg) => alert(msg));
-
-        function copyCode() {
-            navigator.clipboard.writeText(currentRoomCode);
-            alert('방 코드가 복사되었습니다: ' + currentRoomCode);
-        }
-
-        function startGame() { 
-            socket.emit('startGame'); 
-        }
-
-        socket.on('gameStarted', () => {
-            document.getElementById('hostControls').style.display = 'none';
-            document.getElementById('guestWaiting').style.display = 'none';
-        });
-
-        socket.on('updatePlayers', ({ players, hostId }) => {
-            const listDiv = document.getElementById('playerList');
-            listDiv.innerHTML = players.map(p => {
-                const isPlayerHost = p.id === hostId;
-                const hostBadge = isPlayerHost ? `<span class="host-badge">👑 방장</span>` : '';
-                return `<div class="player-item"><span>${p.nickname}${hostBadge}</span> <strong>${p.score}점</strong></div>`;
-            }).join('');
-        });
-
-        socket.on('turnStart', ({ drawerId, drawerNick, timeLeft, hintMask }) => {
-            isDrawer = (socket.id === drawerId);
-            document.getElementById('timer').innerText = timeLeft;
-            
-            if (isDrawer) {
-                document.getElementById('controls').style.display = 'flex';
-                setPen();
-                selectColor('#000000');
-            } else {
-                document.getElementById('controls').style.display = 'none';
-                document.getElementById('turnInfo').innerHTML = `🎨 [${drawerNick}]님이 그림을 그리는 중입니다!<br><span class="hint-badge">${hintMask}</span>`;
-            }
-        });
-
-        socket.on('yourWord', (word) => {
-            document.getElementById('turnInfo').innerText = `🎨 당신은 출제자입니다! 제시어: [ ${word} ]`;
-        });
-
-        socket.on('timerUpdate', (time) => {
-            document.getElementById('timer').innerText = time;
-        });
-
-        function selectColor(color, btnElem) {
-            setPen();
-            lastPenColor = color;
-            strokeColor = color;
-            updatePreviewDot();
-            document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
-            if (btnElem) btnElem.classList.add('active');
-        }
-
-        function setPen() {
-            isEraser = false;
-            strokeColor = lastPenColor;
-            document.getElementById('btnPen').classList.add('active');
-            document.getElementById('btnEraser').classList.remove('active');
-            updatePreviewDot();
-        }
-
-        function setEraser() {
-            isEraser = true;
-            strokeColor = '#ffffff';
-            document.getElementById('btnPen').classList.remove('active');
-            document.getElementById('btnEraser').classList.add('active');
-            updatePreviewDot();
-        }
-
-        function updateLineWidth(val) {
-            lineWidth = parseInt(val);
-            document.getElementById('sizeText').innerText = val + 'px';
-            updatePreviewDot();
-        }
-
-        function updatePreviewDot() {
-            const dot = document.getElementById('previewDot');
-            const size = Math.min(lineWidth, 28);
-            dot.style.width = size + 'px';
-            dot.style.height = size + 'px';
-            dot.style.backgroundColor = isEraser ? '#aaa' : strokeColor;
-        }
-
-        function getCanvasPos(e) {
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-
-            let clientX, clientY;
-            if (e.touches && e.touches.length > 0) {
-                clientX = e.touches[0].clientX;
-                clientY = e.touches[0].clientY;
-            } else {
-                clientX = e.clientX;
-                clientY = e.clientY;
-            }
-
-            return {
-                x: (clientX - rect.left) * scaleX,
-                y: (clientY - rect.top) * scaleY
-            };
-        }
-
-        canvas.addEventListener('mousedown', (e) => {
-            if (!isDrawer) return;
-            isDrawing = true;
-            const pos = getCanvasPos(e);
-            drawAndSend(pos.x, pos.y, 'down');
-        });
-
-        canvas.addEventListener('mousemove', (e) => {
-            if (!isDrawer || !isDrawing) return;
-            const pos = getCanvasPos(e);
-            drawAndSend(pos.x, pos.y, 'move');
-        });
-
-        canvas.addEventListener('mouseup', () => isDrawing = false);
-        canvas.addEventListener('mouseleave', () => isDrawing = false);
-
-        canvas.addEventListener('touchstart', (e) => {
-            if (!isDrawer) return;
-            e.preventDefault();
-            isDrawing = true;
-            const pos = getCanvasPos(e);
-            drawAndSend(pos.x, pos.y, 'down');
-        }, { passive: false });
-
-        canvas.addEventListener('touchmove', (e) => {
-            if (!isDrawer || !isDrawing) return;
-            e.preventDefault();
-            const pos = getCanvasPos(e);
-            drawAndSend(pos.x, pos.y, 'move');
-        }, { passive: false });
-
-        canvas.addEventListener('touchend', (e) => {
-            if (!isDrawer) return;
-            e.preventDefault();
+    canvas.addEventListener('mouseup', () => {
+        if (isDrawing) {
             isDrawing = false;
-        }, { passive: false });
-
-        function drawAndSend(x, y, type) {
-            ctx.strokeStyle = strokeColor;
-            ctx.lineWidth = lineWidth;
-            if (type === 'down') {
-                ctx.beginPath();
-                ctx.moveTo(x, y);
-            } else if (type === 'move') {
-                ctx.lineTo(x, y);
-                ctx.stroke();
-            }
-            socket.emit('draw', { x, y, type, color: strokeColor, width: lineWidth });
+            saveCanvasState();
+            socket.emit('draw', { type: 'end' });
         }
+    });
 
-        socket.on('draw', ({ x, y, type, color, width }) => {
-            ctx.strokeStyle = color;
-            ctx.lineWidth = width || 5;
-            if (type === 'down') {
-                ctx.beginPath();
-                ctx.moveTo(x, y);
-            } else if (type === 'move') {
-                ctx.lineTo(x, y);
-                ctx.stroke();
-            }
+    // 툴바 버튼 핸들러
+    toolPen.addEventListener('click', () => {
+        currentTool = 'pen';
+        toolPen.classList.add('active');
+        toolBucket.classList.remove('active');
+    });
+
+    toolBucket.addEventListener('click', () => {
+        currentTool = 'bucket';
+        toolBucket.classList.add('active');
+        toolPen.classList.remove('active');
+    });
+
+    btnUndo.addEventListener('click', undo);
+    btnRedo.addEventListener('click', redo);
+
+    btnClear.addEventListener('click', () => {
+        if (!isMyTurn) return;
+        socket.emit('clearCanvas');
+    });
+
+    // 채팅 기능
+    function sendMessage() {
+        const msg = chatInput.value.trim();
+        if (msg) {
+            socket.emit('sendMessage', msg);
+            chatInput.value = '';
+        }
+    }
+    btnSend.addEventListener('click', sendMessage);
+    chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+
+    // 소켓 수신 핸들러
+    socket.on('roomCreated', (code) => {
+        displayRoomCode.innerText = code;
+    });
+
+    socket.on('joinSuccess', ({ roomCode, isHost }) => {
+        lobbyScreen.classList.remove('active');
+        gameScreen.classList.add('active');
+        displayRoomCode.innerText = roomCode;
+        if (isHost) btnStart.style.display = 'block';
+        resizeCanvas();
+    });
+
+    socket.on('updatePlayers', ({ players, hostId }) => {
+        playerList.innerHTML = '';
+        players.forEach(p => {
+            const card = document.createElement('div');
+            card.className = `player-card ${p.isDrawing ? 'drawing' : ''}`;
+            
+            const hostBadge = p.id === hostId ? '<span class="host-badge">방장</span>' : '';
+            card.innerHTML = `
+                <div>${hostBadge}<span class="player-name">${p.nickname}</span></div>
+                <div class="player-score">${p.score}점</div>
+            `;
+            playerList.appendChild(card);
         });
 
-        function clearCanvas() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            socket.emit('clearCanvas');
+        btnStart.style.display = (socket.id === hostId) ? 'block' : 'none';
+    });
+
+    socket.on('turnStart', ({ drawerId, hintMask }) => {
+        isMyTurn = (socket.id === drawerId);
+        displayWord.innerText = isMyTurn ? '단어 확인 중...' : hintMask;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvasHistory = [];
+        historyStep = -1;
+        saveCanvasState();
+    });
+
+    socket.on('yourWord', (word) => {
+        displayWord.innerText = `제시어: ${word}`;
+    });
+
+    socket.on('timerUpdate', (time) => {
+        displayTimer.innerText = `${time}초`;
+    });
+
+    socket.on('draw', (data) => {
+        if (data.type === 'start') {
+            ctx.beginPath();
+            ctx.strokeStyle = data.color;
+            ctx.lineWidth = data.lineWidth;
+            ctx.lineCap = 'round';
+            ctx.moveTo(data.x, data.y);
+        } else if (data.type === 'move') {
+            ctx.lineTo(data.x, data.y);
+            ctx.stroke();
+        } else if (data.type === 'bucket') {
+            floodFill(data.x, data.y, data.color);
+            saveCanvasState();
+        } else if (data.type === 'end') {
+            saveCanvasState();
         }
+    });
 
-        socket.on('clearCanvas', () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        });
+    socket.on('syncCanvasHistory', (action) => {
+        if (action === 'undo') undo();
+        if (action === 'redo') redo();
+    });
 
-        function sendChat() {
-            const input = document.getElementById('chatInput');
-            if (input.value.trim()) {
-                socket.emit('sendMessage', input.value.trim());
-                input.value = '';
-            }
+    socket.on('clearCanvas', () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        saveCanvasState();
+    });
+
+    socket.on('chatMessage', (data) => {
+        const msgDiv = document.createElement('div');
+        if (data.system) {
+            msgDiv.className = 'chat-msg system';
+            msgDiv.innerText = data.text;
+        } else {
+            msgDiv.className = 'chat-msg';
+            msgDiv.innerHTML = `<div class="sender">${data.nickname}</div><div>${data.text}</div>`;
         }
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
 
-        socket.on('chatMessage', (data) => {
-            const logs = document.getElementById('chatLogs');
-            const div = document.createElement('div');
-            if (data.system) {
-                div.className = 'system-msg';
-                div.innerText = `[알림] ${data.text}`;
-            } else {
-                div.innerText = `${data.nickname}: ${data.text}`;
-            }
-            logs.appendChild(div);
-            logs.scrollTop = logs.scrollHeight;
-        });
-    </script>
+    // 🎉 정답 공개 및 효과 처리
+    socket.on('correctAnswer', ({ winnerNick, word }) => {
+        playCorrectSound();
+        
+        correctText.innerText = `${winnerNick}님이 정답을 맞추셨습니다! (+100점)`;
+        correctWord.innerText = `정답: [ ${word} ]`;
+        correctOverlay.classList.add('show');
+
+        // 채팅창에도 통보
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'chat-msg correct';
+        msgDiv.innerText = `🎉 [${winnerNick}] 정답! (정답: ${word})`;
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        setTimeout(() => {
+            correctOverlay.classList.remove('show');
+        }, 2500);
+    });
+
+    socket.on('errorMessage', (msg) => {
+        alert(msg);
+    });
+</script>
 </body>
 </html>
