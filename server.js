@@ -8,7 +8,7 @@ const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.static(__dirname));
 
-// 제시어 100개 이상 확대
+// 제시어 100개 이상
 const words = [
     // 동물
     "강아지", "고양이", "호랑이", "사자", "토끼", "다람쥐", "펭귄", "돌고래", "상어", "문어", "오징어", "기린", "코끼리", "팬더", "늑대", "여우", "원숭이", "공룡", "카멜레온", "독수리",
@@ -46,16 +46,22 @@ io.on('connection', (socket) => {
         }
 
         rooms[roomCode] = {
+            hostId: socket.id, // 방장 ID 저장
             players: [],
             drawerIndex: -1,
             currentWord: "",
             timer: null,
             timeLeft: 60,
-            isPlaying: false
+            isPlaying: false,
+            // 추후 방 설정을 위한 기본 옵션 구조
+            settings: {
+                maxTime: 60,
+                maxRounds: 3
+            }
         };
 
         socket.emit('roomCreated', roomCode);
-        joinRoomLogic(socket, roomCode, userNick);
+        joinRoomLogic(socket, roomCode, userNick, true);
     });
 
     socket.on('joinRoom', ({ roomCode, userNick }) => {
@@ -64,25 +70,47 @@ io.on('connection', (socket) => {
             socket.emit('errorMessage', '존재하지 않는 방 코드입니다.');
             return;
         }
-        joinRoomLogic(socket, upperCode, userNick);
+        joinRoomLogic(socket, upperCode, userNick, false);
     });
 
-    function joinRoomLogic(socket, roomCode, userNick) {
+    function joinRoomLogic(socket, roomCode, userNick, isHost) {
         currentRoom = roomCode;
         nickname = userNick;
         socket.join(roomCode);
 
-        rooms[roomCode].players.push({ id: socket.id, nickname: nickname, score: 0 });
+        const room = rooms[roomCode];
+        const isUserHost = isHost || room.hostId === socket.id;
 
-        socket.emit('joinSuccess', { roomCode, nickname, isPlaying: rooms[roomCode].isPlaying });
-        io.to(roomCode).emit('updatePlayers', rooms[roomCode].players);
+        room.players.push({
+            id: socket.id,
+            nickname: nickname,
+            score: 0,
+            isHost: isUserHost
+        });
+
+        socket.emit('joinSuccess', { 
+            roomCode, 
+            nickname, 
+            isPlaying: room.isPlaying,
+            isHost: isUserHost 
+        });
+
+        io.to(roomCode).emit('updatePlayers', { players: room.players, hostId: room.hostId });
         io.to(roomCode).emit('chatMessage', { system: true, text: `${nickname}님이 입장하셨습니다.` });
     }
 
     socket.on('startGame', () => {
         const room = rooms[currentRoom];
-        if (!room || room.players.length < 1) return;
+        if (!room) return;
         
+        // 방장만 게임 시작 가능 검증
+        if (room.hostId !== socket.id) {
+            socket.emit('errorMessage', '방장만 게임을 시작할 수 있습니다.');
+            return;
+        }
+
+        if (room.isPlaying) return;
+
         io.to(currentRoom).emit('gameStarted');
         nextTurn(currentRoom);
     });
@@ -93,7 +121,7 @@ io.on('connection', (socket) => {
 
         clearInterval(room.timer);
         room.isPlaying = true;
-        room.timeLeft = 60;
+        room.timeLeft = room.settings.maxTime || 60;
 
         room.drawerIndex = (room.drawerIndex + 1) % room.players.length;
         const drawer = room.players[room.drawerIndex];
@@ -138,7 +166,7 @@ io.on('connection', (socket) => {
             const player = room.players.find(p => p.id === socket.id);
             if (player) player.score += 100;
 
-            io.to(currentRoom).emit('updatePlayers', room.players);
+            io.to(currentRoom).emit('updatePlayers', { players: room.players, hostId: room.hostId });
             io.to(currentRoom).emit('chatMessage', { system: true, text: `🎉 [${nickname}]님이 정답을 맞추셨습니다! (+100점)` });
 
             clearInterval(room.timer);
@@ -152,8 +180,18 @@ io.on('connection', (socket) => {
         const room = rooms[currentRoom];
         if (room) {
             room.players = room.players.filter(p => p.id !== socket.id);
-            io.to(currentRoom).emit('updatePlayers', room.players);
+
+            // 방장이 나간 경우 다음 사람에게 방장 위임
+            if (socket.id === room.hostId && room.players.length > 0) {
+                room.hostId = room.players[0].id;
+                room.players[0].isHost = true;
+                io.to(room.hostId).emit('youAreHost');
+                io.to(currentRoom).emit('chatMessage', { system: true, text: `👑 ${room.players[0].nickname}님이 새로운 방장이 되었습니다.` });
+            }
+
+            io.to(currentRoom).emit('updatePlayers', { players: room.players, hostId: room.hostId });
             io.to(currentRoom).emit('chatMessage', { system: true, text: `${nickname}님이 퇴장하셨습니다.` });
+
             if (room.players.length === 0) {
                 clearInterval(room.timer);
                 delete rooms[currentRoom];
