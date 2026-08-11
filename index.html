@@ -5,78 +5,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catch Mind - Catch & Draw</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', 'Noto Sans KR', sans-serif; }
-        html, body { width: 100%; height: 100%; overflow: hidden; }
-        body { background: #f0f2f5; display: flex; justify-content: center; align-items: center; }
-        
-        #app { width: 1000px; height: 680px; background: #fff; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; position: relative; }
-        
-        .screen { display: none; width: 100%; height: 100%; }
-        .screen.active { display: flex !important; }
-        
-        #lobby-screen { flex-direction: column; justify-content: center; align-items: center; gap: 20px; background: linear-gradient(135deg, #6e8efb, #a777e3); color: white; }
-        .lobby-card { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 16px; color: #333; width: 360px; text-align: center; box-shadow: 0 8px 16px rgba(0,0,0,0.2); }
-        .lobby-card h1 { margin-bottom: 20px; color: #4a4a4a; font-size: 26px; }
-        .input-group { margin-bottom: 15px; text-align: left; }
-        .input-group label { display: block; font-size: 13px; color: #666; margin-bottom: 5px; font-weight: bold; }
-        .input-group input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; outline: none; }
-        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
-        button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 14px; }
-        .btn-primary { background: #4e54c8; color: white; }
-        .btn-primary:hover { background: #3f43a6; }
-        .btn-secondary { background: #e0e0e0; color: #333; }
-        .btn-secondary:hover { background: #d0d0d0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; }
+    body { background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+    
+    #app { width: 950px; height: 650px; background: #fff; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); position: relative; overflow: hidden; }
+    
+    .screen { display: none; width: 100%; height: 100%; }
+    .screen.active { display: block; }
+    
+    /* 1. 로비 화면 */
+    #lobby-screen { background: linear-gradient(135deg, #6e8efb, #a777e3); color: white; text-align: center; }
+    .lobby-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: #333; padding: 35px; border-radius: 12px; width: 340px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    .lobby-box h1 { margin-bottom: 20px; color: #4e54c8; font-size: 24px; }
+    .lobby-box input { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 6px; outline: none; }
+    .btn-group { display: flex; gap: 10px; margin-top: 5px; }
+    button { flex: 1; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; background: #4e54c8; color: white; font-size: 14px; }
+    button:hover { opacity: 0.9; }
 
-        #game-screen { flex-direction: column; width: 100%; height: 100%; }
-        header { height: 60px; background: #ffffff; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; flex-shrink: 0; }
-        .room-info { font-weight: bold; font-size: 18px; color: #333; }
-        .word-box { font-size: 20px; font-weight: 800; color: #ff4757; background: #ffeae6; padding: 6px 16px; border-radius: 20px; }
-        .timer-box { font-size: 18px; font-weight: bold; color: #2ed573; min-width: 60px; text-align: right; }
+    /* 2. 게임 화면 */
+    #game-screen { position: relative; width: 100%; height: 100%; }
+    
+    header { height: 50px; background: #fff; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-sizing: border-box; }
+    .room-info { font-weight: bold; font-size: 15px; }
+    .word-box { font-size: 18px; font-weight: bold; color: #ff4757; background: #ffeae6; padding: 4px 16px; border-radius: 20px; }
+    .timer-box { font-size: 16px; font-weight: bold; color: #2ed573; }
 
-        .main-container { display: flex; flex: 1; height: calc(100% - 60px); overflow: hidden; }
-        
-        .sidebar { width: 200px; background: #f8f9fa; border-right: 1px solid #e0e0e0; padding: 15px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
-        .player-card { background: white; padding: 10px 12px; border-radius: 8px; border: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
-        .player-card.drawing { border: 2px solid #ff4757; background: #fff0f0; }
-        .player-name { font-weight: bold; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 90px; }
-        .player-score { font-size: 12px; color: #ff6b81; font-weight: bold; }
-        .host-badge { background: #ffa502; color: white; font-size: 10px; padding: 2px 4px; border-radius: 4px; margin-right: 4px; }
+    /* 사이드바 (플레이어 목록 & 게임 시작 버튼) */
+    .sidebar { position: absolute; top: 50px; left: 0; width: 180px; height: 600px; background: #f8f9fa; border-right: 1px solid #eee; padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; }
+    #player-list { flex: 1; overflow-y: auto; }
+    .player-card { background: white; padding: 8px 10px; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+    .player-card.drawing { border: 2px solid #ff4757; background: #fff0f0; }
+    #btn-start { height: 42px; margin-top: 10px; flex: none; font-size: 14px; }
 
-        .canvas-area { flex: 1; display: flex; flex-direction: column; background: #ffffff; position: relative; height: 100%; overflow: hidden; }
-        #canvas { background: white; cursor: crosshair; flex: 1; width: 100%; height: calc(100% - 50px); display: block; }
-        
-        .toolbar { height: 50px; background: #ffffff; border-top: 1px solid #e0e0e0; display: flex; align-items: center; padding: 0 15px; gap: 10px; flex-shrink: 0; }
-        .tool-btn { padding: 6px 12px; background: #f1f2f6; border: 1px solid #ced6e0; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 4px; }
-        .tool-btn.active { background: #2ed573; color: white; border-color: #2ed573; }
-        .color-picker { width: 30px; height: 30px; border: none; border-radius: 50%; cursor: pointer; padding: 0; background: none; }
-        .line-width { width: 80px; }
+    /* 캔버스 영역 */
+    .canvas-area { position: absolute; top: 50px; left: 180px; width: 520px; height: 600px; background: #fff; }
+    #canvas { width: 520px; height: 550px; background: #fff; display: block; cursor: crosshair; }
+    
+    /* 하단 툴바 */
+    .toolbar { height: 50px; background: #fafafa; border-top: 1px solid #eee; display: flex; align-items: center; padding: 0 10px; gap: 6px; box-sizing: border-box; }
+    .tool-btn { padding: 6px 10px; background: #fff; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; color: #333; }
+    .tool-btn.active { background: #2ed573; color: white; border-color: #2ed573; }
 
-        .chat-area { width: 260px; background: #ffffff; border-left: 1px solid #e0e0e0; display: flex; flex-direction: column; flex-shrink: 0; }
-        .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
-        .chat-msg { background: #f1f2f6; padding: 8px 12px; border-radius: 8px; max-width: 90%; word-break: break-all; }
-        .chat-msg.system { background: #eccc68; color: #333; font-weight: bold; align-self: center; text-align: center; width: 100%; max-width: 100%; font-size: 12px; }
-        .chat-msg.correct { background: #2ed573; color: white; font-weight: bold; align-self: center; text-align: center; width: 100%; max-width: 100%; font-size: 13px; }
-        .chat-msg .sender { font-weight: bold; margin-bottom: 2px; color: #57606f; }
-        .chat-input-box { padding: 10px; border-top: 1px solid #e0e0e0; display: flex; gap: 5px; }
-        .chat-input-box input { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 6px; outline: none; font-size: 13px; }
+    /* 채팅 영역 */
+    .chat-area { position: absolute; top: 50px; left: 700px; width: 250px; height: 600px; border-left: 1px solid #eee; background: #fff; display: flex; flex-direction: column; }
+    .chat-messages { flex: 1; padding: 10px; overflow-y: auto; font-size: 12px; display: flex; flex-direction: column; gap: 6px; }
+    .chat-msg { background: #f1f2f6; padding: 6px 10px; border-radius: 6px; word-break: break-all; }
+    .chat-msg.system { background: #eccc68; font-weight: bold; text-align: center; }
+    .chat-msg.correct { background: #2ed573; color: white; font-weight: bold; text-align: center; }
+    .chat-input-box { height: 50px; padding: 8px; border-top: 1px solid #eee; display: flex; gap: 4px; box-sizing: border-box; }
+    .chat-input-box input { flex: 1; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; outline: none; font-size: 12px; }
 
-        .correct-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(46, 213, 115, 0.2);
-            display: flex; justify-content: center; align-items: center;
-            pointer-events: none; opacity: 0; transition: opacity 0.3s ease; z-index: 10;
-        }
-        .correct-overlay.show { opacity: 1; }
-        .correct-banner {
-            background: white; padding: 25px 40px; border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.25); text-align: center;
-            transform: scale(0.6); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        .correct-overlay.show .correct-banner { transform: scale(1.05); }
-        .correct-banner h2 { font-size: 28px; color: #2ed573; margin-bottom: 8px; }
-        .correct-banner p { font-size: 16px; color: #2f3542; font-weight: bold; }
-        .correct-banner .answer-word { color: #ff4757; font-size: 20px; margin-top: 5px; font-weight: 800; }
-    </style>
+    /* 정답 알림 팝업 */
+    .correct-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: none; justify-content: center; align-items: center; z-index: 100; }
+    .correct-overlay.show { display: flex; }
+    .correct-banner { background: white; color: #333; padding: 20px 35px; border-radius: 12px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+</style>
 </head>
 <body>
 
