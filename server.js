@@ -8,10 +8,24 @@ const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.static(__dirname));
 
-const words = ["바나나", "사과", "비행기", "강아지", "고양이", "피자", "자동차", "호랑이", "안경", "시계", "아이패드", "선풍기", "지구", "선글라스", "기타", "피아노", "축구공", "아이스크림", "햄버거", "우산"];
+// 제시어 100개 이상 확대
+const words = [
+    // 동물
+    "강아지", "고양이", "호랑이", "사자", "토끼", "다람쥐", "펭귄", "돌고래", "상어", "문어", "오징어", "기린", "코끼리", "팬더", "늑대", "여우", "원숭이", "공룡", "카멜레온", "독수리",
+    // 음식
+    "피자", "햄버거", "아이스크림", "바나나", "사과", "딸기", "수박", "초밥", "떡볶이", "라면", "치킨", "계란후라이", "붕어빵", "도넛", "케이크", "삼겹살", "핫도그", "만두", "짜장면", "파스타",
+    // 사물
+    "비행기", "자동차", "안경", "시계", "아이패드", "선풍기", "기타", "피아노", "축구공", "우산", "스마트폰", "노트북", "냉장고", "세탁기", "자전거", "마우스", "키보드", "헤드폰", "거울", "선글라스", "카메라", "연필", "지우개", "가위", "텀블러",
+    // 자연 & 우주
+    "지구", "태양", "달", "무지개", "번개", "화산", "화성", "자작나무", "단풍잎", "해바라기", "선인장", "구름", "눈사람", "파도", "동굴",
+    // 장소 & 직업
+    "경찰서", "소방서", "병원", "학교", "공항", "영화관", "놀이공원", "피라미드", "자유의여신상", "에펠탑", "경찰관", "소방관", "의사", "요리사", "우주비행사", "가수",
+    // 생활 & 캐릭터/상상
+    "신발", "모자", "양말", "장갑", "왕관", "보물상자", "유령", "외계인", "마법사", "로봇", "하트", "해적선", "기구"
+];
+
 const rooms = {};
 
-// 6자리 영문+숫자 랜덤 방 코드 생성 함수
 function generateRoomCode() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let result = '';
@@ -25,10 +39,9 @@ io.on('connection', (socket) => {
     let currentRoom = null;
     let nickname = "";
 
-    // 1. 방 만들기 (방 코드 자동 생성)
     socket.on('createRoom', ({ userNick }) => {
         let roomCode = generateRoomCode();
-        while (rooms[roomCode]) { // 중복 코드 방지
+        while (rooms[roomCode]) {
             roomCode = generateRoomCode();
         }
 
@@ -45,7 +58,6 @@ io.on('connection', (socket) => {
         joinRoomLogic(socket, roomCode, userNick);
     });
 
-    // 2. 방 참가하기
     socket.on('joinRoom', ({ roomCode, userNick }) => {
         const upperCode = roomCode.trim().toUpperCase();
         if (!rooms[upperCode]) {
@@ -67,7 +79,6 @@ io.on('connection', (socket) => {
         io.to(roomCode).emit('chatMessage', { system: true, text: `${nickname}님이 입장하셨습니다.` });
     }
 
-    // 게임 시작
     socket.on('startGame', () => {
         const room = rooms[currentRoom];
         if (!room || room.players.length < 1) return;
@@ -109,17 +120,14 @@ io.on('connection', (socket) => {
         }, 1000);
     }
 
-    // 그림 그리기
     socket.on('draw', (drawData) => {
         if (currentRoom) socket.to(currentRoom).emit('draw', drawData);
     });
 
-    // 캔버스 지우기
     socket.on('clearCanvas', () => {
         if (currentRoom) io.to(currentRoom).emit('clearCanvas');
     });
 
-    // 채팅 & 정답 확인
     socket.on('sendMessage', (msg) => {
         const room = rooms[currentRoom];
         if (!room) return;
@@ -140,7 +148,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // 퇴장
     socket.on('disconnect', () => {
         const room = rooms[currentRoom];
         if (room) {
