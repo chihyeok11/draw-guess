@@ -27,7 +27,8 @@
         input, button { padding: 8px 12px; font-size: 14px; border-radius: 6px; border: 1px solid #ccc; }
         button { background: #007bff; color: white; border: none; cursor: pointer; }
         button:hover { background: #0056b3; }
-        .player-item { padding: 8px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+        .player-item { padding: 8px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .host-badge { background: #ffc107; color: #000; font-size: 11px; padding: 2px 5px; border-radius: 4px; font-weight: bold; margin-left: 5px; }
         
         /* 그림 도구 스타일 */
         .tools-panel { margin-top: 10px; display: none; flex-direction: column; gap: 10px; align-items: center; background: #f8f9fa; padding: 12px; border-radius: 8px; }
@@ -45,6 +46,7 @@
         .stroke-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #007bff; cursor: pointer; }
         .size-preview-dot { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; }
         .dot { border-radius: 50%; background-color: #000; display: inline-block; transition: all 0.1s; }
+        .waiting-text { color: #666; font-size: 13px; font-style: italic; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -79,11 +81,17 @@
             <h3>👥 참가자 목록</h3>
             <div id="playerList"></div>
             <br>
-            <button id="btnStartGame" onclick="startGame()" style="width: 100%; background: #28a745; padding: 10px; font-size: 16px;">게임 시작</button>
+            <!-- 방장 전용 게임 시작 버튼 영역 -->
+            <div id="hostControls">
+                <button id="btnStartGame" onclick="startGame()" style="width: 100%; background: #28a745; padding: 10px; font-size: 16px;">게임 시작 🚀</button>
+            </div>
+            <div id="guestWaiting" class="waiting-text" style="display: none;">
+                ⏳ 방장이 게임을 시작하기를 기다리는 중...
+            </div>
         </div>
 
         <div class="center-panel">
-            <h2 id="turnInfo">게임 시작 버튼을 눌러주세요</h2>
+            <h2 id="turnInfo">대기 중...</h2>
             <h3>⏱️ 남은 시간: <span id="timer">60</span>초</h3>
             <canvas id="canvas" width="480" height="340"></canvas>
             
@@ -125,6 +133,7 @@
         const socket = io();
         let isDrawer = false;
         let isDrawing = false;
+        let isHost = false;
         let lastPenColor = '#000000';
         let strokeColor = '#000000';
         let lineWidth = 5;
@@ -168,16 +177,32 @@
             socket.emit('joinRoom', { roomCode, userNick });
         }
 
-        socket.on('joinSuccess', ({ roomCode, isPlaying }) => {
+        socket.on('joinSuccess', ({ roomCode, isPlaying, isHost: hostStatus }) => {
             currentRoomCode = roomCode;
+            isHost = hostStatus;
             document.getElementById('displayRoomCode').innerText = roomCode;
             document.getElementById('setupBox').style.display = 'none';
             document.getElementById('gameLayout').style.display = 'flex';
             
-            if (isPlaying) {
-                document.getElementById('btnStartGame').style.display = 'none';
-            }
+            updateHostUI();
         });
+
+        socket.on('youAreHost', () => {
+            isHost = true;
+            updateHostUI();
+        });
+
+        function updateHostUI() {
+            if (isHost) {
+                document.getElementById('hostControls').style.display = 'block';
+                document.getElementById('guestWaiting').style.display = 'none';
+                document.getElementById('turnInfo').innerText = '방장님, 게임 시작 버튼을 눌러주세요!';
+            } else {
+                document.getElementById('hostControls').style.display = 'none';
+                document.getElementById('guestWaiting').style.display = 'block';
+                document.getElementById('turnInfo').innerText = '방장이 게임을 시작하기를 기다리는 중입니다...';
+            }
+        }
 
         socket.on('errorMessage', (msg) => alert(msg));
 
@@ -191,14 +216,17 @@
         }
 
         socket.on('gameStarted', () => {
-            document.getElementById('btnStartGame').style.display = 'none';
+            document.getElementById('hostControls').style.display = 'none';
+            document.getElementById('guestWaiting').style.display = 'none';
         });
 
-        socket.on('updatePlayers', (players) => {
+        socket.on('updatePlayers', ({ players, hostId }) => {
             const listDiv = document.getElementById('playerList');
-            listDiv.innerHTML = players.map(p => 
-                `<div class="player-item"><span>${p.nickname}</span> <strong>${p.score}점</strong></div>`
-            ).join('');
+            listDiv.innerHTML = players.map(p => {
+                const isPlayerHost = p.id === hostId;
+                const hostBadge = isPlayerHost ? `<span class="host-badge">👑 방장</span>` : '';
+                return `<div class="player-item"><span>${p.nickname}${hostBadge}</span> <strong>${p.score}점</strong></div>`;
+            }).join('');
         });
 
         socket.on('turnStart', ({ drawerId, drawerNick, timeLeft }) => {
@@ -223,7 +251,7 @@
             document.getElementById('timer').innerText = time;
         });
 
-        // 색상 및 슬라이더 조절 함수
+        // 색상 및 슬라이더 조절
         function selectColor(color, btnElem) {
             setPen();
             lastPenColor = color;
@@ -257,10 +285,10 @@
 
         function updatePreviewDot() {
             const dot = document.getElementById('previewDot');
-            const size = Math.min(lineWidth, 28); // 미리보기 크기 제한
+            const size = Math.min(lineWidth, 28);
             dot.style.width = size + 'px';
             dot.style.height = size + 'px';
-            dot.style.backgroundColor = isEraser ? '#aaa' : strokeColor; // 지우개일 경우 회색 표시
+            dot.style.backgroundColor = isEraser ? '#aaa' : strokeColor;
         }
 
         function getCanvasPos(e) {
