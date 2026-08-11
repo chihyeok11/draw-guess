@@ -30,16 +30,21 @@
         .player-item { padding: 8px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
         
         /* 그림 도구 스타일 */
-        .tools-panel { margin-top: 10px; display: none; flex-direction: column; gap: 8px; align-items: center; background: #f8f9fa; padding: 12px; border-radius: 8px; }
-        .tool-row { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; align-items: center; }
+        .tools-panel { margin-top: 10px; display: none; flex-direction: column; gap: 10px; align-items: center; background: #f8f9fa; padding: 12px; border-radius: 8px; }
+        .tool-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; align-items: center; width: 100%; }
         .color-palette { display: flex; gap: 4px; flex-wrap: wrap; max-width: 280px; justify-content: center; }
         .color-btn { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 3px rgba(0,0,0,0.3); cursor: pointer; }
         .color-btn.active { transform: scale(1.2); border-color: #333; }
-        .size-btn { padding: 4px 8px; font-size: 12px; background: #e9ecef; color: #333; border: 1px solid #ccc; }
-        .size-btn.active { background: #007bff; color: white; font-weight: bold; }
         .mode-btn { background: #6c757d; font-size: 13px; }
-        .mode-btn.active { background: #ffc107; color: #000; font-weight: bold; }
+        .mode-btn.active { background: #007bff; color: #fff; font-weight: bold; }
         .room-tag { background: #e7f3ff; color: #007bff; padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 16px; display: inline-block; margin-bottom: 10px; }
+        
+        /* 슬라이더 컨트롤 스타일 */
+        .slider-container { display: flex; align-items: center; gap: 8px; background: #fff; padding: 4px 12px; border-radius: 20px; border: 1px solid #ddd; }
+        .stroke-slider { -webkit-appearance: none; width: 100px; height: 6px; border-radius: 3px; background: #ddd; outline: none; }
+        .stroke-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #007bff; cursor: pointer; }
+        .size-preview-dot { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; }
+        .dot { border-radius: 50%; background-color: #000; display: inline-block; transition: all 0.1s; }
     </style>
 </head>
 <body>
@@ -87,16 +92,21 @@
                 <!-- 색상 선택 -->
                 <div class="color-palette" id="palette"></div>
                 
-                <!-- 도구 및 굵기 선택 -->
-                <div class="tool-row" style="margin-top: 5px;">
+                <!-- 도구 및 슬라이더 굵기 조절 -->
+                <div class="tool-row">
                     <button id="btnPen" class="mode-btn active" onclick="setPen()">펜 ✏️</button>
                     <button id="btnEraser" class="mode-btn" onclick="setEraser()">지우개 🧹</button>
-                    <span style="font-size: 12px; color: #666; margin-left: 5px;">| 굵기:</span>
-                    <button class="size-btn" onclick="setLineWidth(2, this)">얇게</button>
-                    <button class="size-btn active" onclick="setLineWidth(5, this)">보통</button>
-                    <button class="size-btn" onclick="setLineWidth(10, this)">두껍게</button>
-                    <button class="size-btn" onclick="setLineWidth(20, this)">특대</button>
-                    <button onclick="clearCanvas()" style="background: #dc3545; font-size: 12px; padding: 4px 8px;">전체 지우기 🗑️</button>
+                    
+                    <!-- 굵기 스와이프 슬라이더 -->
+                    <div class="slider-container">
+                        <input type="range" id="sizeRange" class="stroke-slider" min="1" max="40" value="5" oninput="updateLineWidth(this.value)">
+                        <div class="size-preview-dot">
+                            <span id="previewDot" class="dot" style="width: 5px; height: 5px;"></span>
+                        </div>
+                        <span id="sizeText" style="font-size: 12px; color: #555; width: 28px;">5px</span>
+                    </div>
+
+                    <button onclick="clearCanvas()" style="background: #dc3545; font-size: 12px; padding: 6px 10px;">전체 지우기 🗑️</button>
                 </div>
             </div>
         </div>
@@ -213,11 +223,12 @@
             document.getElementById('timer').innerText = time;
         });
 
-        // 색상 및 도구 관리
+        // 색상 및 슬라이더 조절 함수
         function selectColor(color, btnElem) {
             setPen();
             lastPenColor = color;
             strokeColor = color;
+            updatePreviewDot();
             document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
             if (btnElem) btnElem.classList.add('active');
         }
@@ -227,6 +238,7 @@
             strokeColor = lastPenColor;
             document.getElementById('btnPen').classList.add('active');
             document.getElementById('btnEraser').classList.remove('active');
+            updatePreviewDot();
         }
 
         function setEraser() {
@@ -234,12 +246,21 @@
             strokeColor = '#ffffff';
             document.getElementById('btnPen').classList.remove('active');
             document.getElementById('btnEraser').classList.add('active');
+            updatePreviewDot();
         }
 
-        function setLineWidth(width, btnElem) {
-            lineWidth = width;
-            document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
-            if (btnElem) btnElem.classList.add('active');
+        function updateLineWidth(val) {
+            lineWidth = parseInt(val);
+            document.getElementById('sizeText').innerText = val + 'px';
+            updatePreviewDot();
+        }
+
+        function updatePreviewDot() {
+            const dot = document.getElementById('previewDot');
+            const size = Math.min(lineWidth, 28); // 미리보기 크기 제한
+            dot.style.width = size + 'px';
+            dot.style.height = size + 'px';
+            dot.style.backgroundColor = isEraser ? '#aaa' : strokeColor; // 지우개일 경우 회색 표시
         }
 
         function getCanvasPos(e) {
