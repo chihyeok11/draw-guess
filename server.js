@@ -53,7 +53,7 @@ io.on('connection', (socket) => {
             timer: null,
             timeLeft: 60,
             isPlaying: false,
-            isTurnActive: false, // 현재 턴이 실제 진행 중(그리기/정답 가능)인지 여부
+            isTurnActive: false,
             settings: {
                 maxTime: 60,
                 maxRounds: 3
@@ -120,18 +120,22 @@ io.on('connection', (socket) => {
 
         clearInterval(room.timer);
         room.isPlaying = true;
-        room.isTurnActive = true; // 턴 활성화
+        room.isTurnActive = true;
         room.timeLeft = room.settings.maxTime || 60;
 
         room.drawerIndex = (room.drawerIndex + 1) % room.players.length;
         const drawer = room.players[room.drawerIndex];
         room.currentWord = words[Math.floor(Math.random() * words.length)];
 
+        // 글자 수만큼 'ㅡ ' 반복 생성 (예: 'ㅡ ㅡ ㅡ')
+        const hintMask = Array(room.currentWord.length).fill('ㅡ').join(' ');
+
         io.to(roomCode).emit('clearCanvas');
         io.to(roomCode).emit('turnStart', {
             drawerId: drawer.id,
             drawerNick: drawer.nickname,
-            timeLeft: room.timeLeft
+            timeLeft: room.timeLeft,
+            hintMask: hintMask // 힌트 텍스트 전달
         });
 
         io.to(drawer.id).emit('yourWord', room.currentWord);
@@ -142,7 +146,7 @@ io.on('connection', (socket) => {
 
             if (room.timeLeft <= 0) {
                 clearInterval(room.timer);
-                room.isTurnActive = false; // 시간 종료 시 턴 비활성화 (그리기/정답 입력 차단)
+                room.isTurnActive = false;
 
                 io.to(roomCode).emit('chatMessage', { system: true, text: `⏰ 시간 초과! 정답은 [${room.currentWord}]였습니다.` });
                 setTimeout(() => nextTurn(roomCode), 3000);
@@ -150,7 +154,6 @@ io.on('connection', (socket) => {
         }, 1000);
     }
 
-    // 버그 수정 1: 현재 턴의 출제자이며 턴이 활성화된 상태일 때만 그리기 권한 허용
     socket.on('draw', (drawData) => {
         const room = rooms[currentRoom];
         if (!room || !room.isPlaying || !room.isTurnActive) return;
@@ -171,7 +174,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // 버그 수정 2: 턴이 활성화된 상태(`isTurnActive === true`)일 때만 정답 인정
     socket.on('sendMessage', (msg) => {
         const room = rooms[currentRoom];
         if (!room) return;
@@ -179,7 +181,7 @@ io.on('connection', (socket) => {
         const isDrawer = room.players[room.drawerIndex]?.id === socket.id;
 
         if (room.isPlaying && room.isTurnActive && !isDrawer && msg.trim() === room.currentWord) {
-            room.isTurnActive = false; // 정답을 맞춘 즉시 추가 정답 차단
+            room.isTurnActive = false;
             clearInterval(room.timer);
 
             const player = room.players.find(p => p.id === socket.id);
@@ -188,7 +190,7 @@ io.on('connection', (socket) => {
             io.to(currentRoom).emit('updatePlayers', { players: room.players, hostId: room.hostId });
             io.to(currentRoom).emit('chatMessage', { system: true, text: `🎉 [${nickname}]님이 정답을 맞추셨습니다! (+100점)` });
 
-            setTimeout(() => nextTurn(roomCode), 2000);
+            setTimeout(() => nextTurn(currentRoom), 2000);
         } else {
             io.to(currentRoom).emit('chatMessage', { nickname: nickname, text: msg });
         }
