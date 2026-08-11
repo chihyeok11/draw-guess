@@ -8,7 +8,7 @@ const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.static(__dirname));
 
-// 제시어 100개 이상
+// 제시어 목록
 const words = [
     // 동물
     "강아지", "고양이", "호랑이", "사자", "토끼", "다람쥐", "펭귄", "돌고래", "상어", "문어", "오징어", "기린", "코끼리", "팬더", "늑대", "여우", "원숭이", "공룡", "카멜레온", "독수리",
@@ -46,14 +46,14 @@ io.on('connection', (socket) => {
         }
 
         rooms[roomCode] = {
-            hostId: socket.id, // 방장 ID 저장
+            hostId: socket.id,
             players: [],
             drawerIndex: -1,
             currentWord: "",
             timer: null,
             timeLeft: 60,
             isPlaying: false,
-            // 추후 방 설정을 위한 기본 옵션 구조
+            isTurnActive: false, // 현재 턴이 실제 진행 중(그리기/정답 가능)인지 여부
             settings: {
                 maxTime: 60,
                 maxRounds: 3
@@ -103,7 +103,6 @@ io.on('connection', (socket) => {
         const room = rooms[currentRoom];
         if (!room) return;
         
-        // 방장만 게임 시작 가능 검증
         if (room.hostId !== socket.id) {
             socket.emit('errorMessage', '방장만 게임을 시작할 수 있습니다.');
             return;
@@ -121,6 +120,7 @@ io.on('connection', (socket) => {
 
         clearInterval(room.timer);
         room.isPlaying = true;
+        room.isTurnActive = true; // 턴 활성화
         room.timeLeft = room.settings.maxTime || 60;
 
         room.drawerIndex = (room.drawerIndex + 1) % room.players.length;
@@ -142,35 +142,53 @@ io.on('connection', (socket) => {
 
             if (room.timeLeft <= 0) {
                 clearInterval(room.timer);
+                room.isTurnActive = false; // 시간 종료 시 턴 비활성화 (그리기/정답 입력 차단)
+
                 io.to(roomCode).emit('chatMessage', { system: true, text: `⏰ 시간 초과! 정답은 [${room.currentWord}]였습니다.` });
                 setTimeout(() => nextTurn(roomCode), 3000);
             }
         }, 1000);
     }
 
+    // 버그 수정 1: 현재 턴의 출제자이며 턴이 활성화된 상태일 때만 그리기 권한 허용
     socket.on('draw', (drawData) => {
-        if (currentRoom) socket.to(currentRoom).emit('draw', drawData);
+        const room = rooms[currentRoom];
+        if (!room || !room.isPlaying || !room.isTurnActive) return;
+
+        const currentDrawer = room.players[room.drawerIndex];
+        if (currentDrawer && currentDrawer.id === socket.id) {
+            socket.to(currentRoom).emit('draw', drawData);
+        }
     });
 
     socket.on('clearCanvas', () => {
-        if (currentRoom) io.to(currentRoom).emit('clearCanvas');
+        const room = rooms[currentRoom];
+        if (!room || !room.isPlaying || !room.isTurnActive) return;
+
+        const currentDrawer = room.players[room.drawerIndex];
+        if (currentDrawer && currentDrawer.id === socket.id) {
+            io.to(currentRoom).emit('clearCanvas');
+        }
     });
 
+    // 버그 수정 2: 턴이 활성화된 상태(`isTurnActive === true`)일 때만 정답 인정
     socket.on('sendMessage', (msg) => {
         const room = rooms[currentRoom];
         if (!room) return;
 
         const isDrawer = room.players[room.drawerIndex]?.id === socket.id;
 
-        if (room.isPlaying && !isDrawer && msg.trim() === room.currentWord) {
+        if (room.isPlaying && room.isTurnActive && !isDrawer && msg.trim() === room.currentWord) {
+            room.isTurnActive = false; // 정답을 맞춘 즉시 추가 정답 차단
+            clearInterval(room.timer);
+
             const player = room.players.find(p => p.id === socket.id);
             if (player) player.score += 100;
 
             io.to(currentRoom).emit('updatePlayers', { players: room.players, hostId: room.hostId });
             io.to(currentRoom).emit('chatMessage', { system: true, text: `🎉 [${nickname}]님이 정답을 맞추셨습니다! (+100점)` });
 
-            clearInterval(room.timer);
-            setTimeout(() => nextTurn(currentRoom), 2000);
+            setTimeout(() => nextTurn(roomCode), 2000);
         } else {
             io.to(currentRoom).emit('chatMessage', { nickname: nickname, text: msg });
         }
@@ -181,7 +199,6 @@ io.on('connection', (socket) => {
         if (room) {
             room.players = room.players.filter(p => p.id !== socket.id);
 
-            // 방장이 나간 경우 다음 사람에게 방장 위임
             if (socket.id === room.hostId && room.players.length > 0) {
                 room.hostId = room.players[0].id;
                 room.players[0].isHost = true;
@@ -201,4 +218,4 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 10000;
-server.listen(PORT, () => console.log(`서버 실행 중: ${PORT}`));
+server.listen(PORT, () => console.log(`Draw, Guess 서버 실행 중: ${PORT}`));
