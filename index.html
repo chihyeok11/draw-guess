@@ -2,23 +2,26 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Draw, Guess</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>실시간 멀티 그림 퀴즈</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { font-family: 'Malgun Gothic', sans-serif; background-color: #f0f2f5; text-align: center; margin: 0; padding: 20px; }
-        .setup-box { background: white; padding: 30px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-top: 50px; width: 320px; }
+        body { font-family: 'Malgun Gothic', sans-serif; background-color: #f0f2f5; text-align: center; margin: 0; padding: 15px; touch-action: manipulation; }
+        .setup-box { background: white; padding: 25px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-top: 30px; width: 90%; max-width: 320px; box-sizing: border-box; }
         .tab-buttons { display: flex; gap: 10px; margin-bottom: 20px; }
         .tab-btn { flex: 1; padding: 10px; border: none; background: #e0e0e0; cursor: pointer; border-radius: 6px; font-weight: bold; }
         .tab-btn.active { background: #007bff; color: white; }
         
-        .game-layout { display: none; justify-content: center; gap: 20px; max-width: 1050px; margin: 0 auto; }
-        .left-panel, .right-panel { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .left-panel { width: 220px; text-align: left; }
-        .center-panel { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .right-panel { width: 250px; display: flex; flex-direction: column; }
+        .game-layout { display: none; flex-direction: column; align-items: center; gap: 15px; max-width: 1000px; margin: 0 auto; }
+        @media (min-width: 768px) {
+            .game-layout { flex-direction: row; justify-content: center; align-items: flex-start; }
+        }
         
-        canvas { border: 2px solid #ddd; border-radius: 8px; background: white; cursor: crosshair; }
-        .chat-logs { height: 320px; border: 1px solid #ddd; overflow-y: auto; padding: 10px; border-radius: 6px; text-align: left; font-size: 14px; margin-bottom: 10px; }
+        .left-panel, .right-panel { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 340px; box-sizing: border-box; }
+        .center-panel { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 500px; box-sizing: border-box; }
+        
+        canvas { border: 2px solid #ddd; border-radius: 8px; background: white; cursor: crosshair; touch-action: none; max-width: 100%; height: auto; }
+        .chat-logs { height: 200px; border: 1px solid #ddd; overflow-y: auto; padding: 10px; border-radius: 6px; text-align: left; font-size: 14px; margin-bottom: 10px; }
         .system-msg { color: #888; font-style: italic; }
         
         input, button { padding: 8px 12px; font-size: 14px; border-radius: 6px; border: 1px solid #ccc; }
@@ -26,10 +29,9 @@
         button:hover { background: #0056b3; }
         .player-item { padding: 8px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
         
-        /* 그림 도구 스타일 */
         .tools-panel { margin-top: 10px; display: none; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; background: #f8f9fa; padding: 10px; border-radius: 8px; }
-        .color-palette { display: flex; gap: 4px; flex-wrap: wrap; max-width: 280px; }
-        .color-btn { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 3px rgba(0,0,0,0.3); cursor: pointer; }
+        .color-palette { display: flex; gap: 4px; flex-wrap: wrap; max-width: 280px; justify-content: center; }
+        .color-btn { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 3px rgba(0,0,0,0.3); cursor: pointer; }
         .color-btn.active { transform: scale(1.2); border-color: #333; }
         .room-tag { background: #e7f3ff; color: #007bff; padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 16px; display: inline-block; margin-bottom: 10px; }
     </style>
@@ -38,7 +40,7 @@
 
     <!-- 로비 화면 -->
     <div id="setupBox" class="setup-box">
-        <h2>🎨 Draw, Guess</h2>
+        <h2>🎨 그림 퀴즈 로비</h2>
         
         <div class="tab-buttons">
             <button id="btnTabCreate" class="tab-btn active" onclick="switchTab('create')">방 만들기</button>
@@ -47,14 +49,12 @@
 
         <input type="text" id="userNick" placeholder="닉네임 입력" style="width: 90%; margin-bottom: 15px;"><br>
 
-        <!-- 방 만들기 폼 -->
         <div id="createForm">
             <button onclick="createRoom()" style="width: 98%; padding: 10px; background: #28a745;">새 방 만들기</button>
         </div>
 
-        <!-- 방 참가하기 폼 -->
         <div id="joinForm" style="display: none;">
-            <input type="text" id="roomCodeInput" placeholder="6자리 방 코드 입력 (예: A8X2K9)" style="width: 90%; text-transform: uppercase; margin-bottom: 15px;"><br>
+            <input type="text" id="roomCodeInput" placeholder="6자리 방 코드 입력" style="width: 90%; text-transform: uppercase; margin-bottom: 15px;"><br>
             <button onclick="joinRoom()" style="width: 98%; padding: 10px;">방 참가하기</button>
         </div>
     </div>
@@ -68,7 +68,7 @@
             <h3>👥 참가자 목록</h3>
             <div id="playerList"></div>
             <br>
-            <button onclick="startGame()" style="width: 100%; background: #28a745; padding: 10px; font-size: 16px;">게임 시작</button>
+            <button id="btnStartGame" onclick="startGame()" style="width: 100%; background: #28a745; padding: 10px; font-size: 16px;">게임 시작</button>
         </div>
 
         <div class="center-panel">
@@ -76,7 +76,6 @@
             <h3>⏱️ 남은 시간: <span id="timer">60</span>초</h3>
             <canvas id="canvas" width="480" height="340"></canvas>
             
-            <!-- 그림판 도구 -->
             <div id="controls" class="tools-panel">
                 <div class="color-palette" id="palette"></div>
                 <button onclick="setEraser()" style="background: #6c757d;">지우개 🧹</button>
@@ -103,14 +102,13 @@
         let isEraser = false;
         let currentRoomCode = '';
 
-        // 색상 팔레트 목록
         const colors = ['#000000', '#ff0000', '#0000ff', '#008000', '#ffff00', '#ffa500', '#800080', '#ff1493', '#8b4513', '#808080'];
 
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
 
-        // 팔레트 생성
         const palette = document.getElementById('palette');
         colors.forEach(color => {
             const btn = document.createElement('button');
@@ -141,11 +139,15 @@
             socket.emit('joinRoom', { roomCode, userNick });
         }
 
-        socket.on('joinSuccess', ({ roomCode }) => {
+        socket.on('joinSuccess', ({ roomCode, isPlaying }) => {
             currentRoomCode = roomCode;
             document.getElementById('displayRoomCode').innerText = roomCode;
             document.getElementById('setupBox').style.display = 'none';
             document.getElementById('gameLayout').style.display = 'flex';
+            
+            if (isPlaying) {
+                document.getElementById('btnStartGame').style.display = 'none';
+            }
         });
 
         socket.on('errorMessage', (msg) => alert(msg));
@@ -155,7 +157,13 @@
             alert('방 코드가 복사되었습니다: ' + currentRoomCode);
         }
 
-        function startGame() { socket.emit('startGame'); }
+        function startGame() { 
+            socket.emit('startGame'); 
+        }
+
+        socket.on('gameStarted', () => {
+            document.getElementById('btnStartGame').style.display = 'none';
+        });
 
         socket.on('updatePlayers', (players) => {
             const listDiv = document.getElementById('playerList');
@@ -185,7 +193,6 @@
             document.getElementById('timer').innerText = time;
         });
 
-        // 색상 선택 및 지우기
         function selectColor(color, btnElem) {
             isEraser = false;
             strokeColor = color;
@@ -201,20 +208,62 @@
             document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
         }
 
-        // 마우스 그리기 이벤트
+        function getCanvasPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            let clientX, clientY;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
         canvas.addEventListener('mousedown', (e) => {
             if (!isDrawer) return;
             isDrawing = true;
-            drawAndSend(e.offsetX, e.offsetY, 'down');
+            const pos = getCanvasPos(e);
+            drawAndSend(pos.x, pos.y, 'down');
         });
 
         canvas.addEventListener('mousemove', (e) => {
             if (!isDrawer || !isDrawing) return;
-            drawAndSend(e.offsetX, e.offsetY, 'move');
+            const pos = getCanvasPos(e);
+            drawAndSend(pos.x, pos.y, 'move');
         });
 
         canvas.addEventListener('mouseup', () => isDrawing = false);
         canvas.addEventListener('mouseleave', () => isDrawing = false);
+
+        canvas.addEventListener('touchstart', (e) => {
+            if (!isDrawer) return;
+            e.preventDefault();
+            isDrawing = true;
+            const pos = getCanvasPos(e);
+            drawAndSend(pos.x, pos.y, 'down');
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (!isDrawer || !isDrawing) return;
+            e.preventDefault();
+            const pos = getCanvasPos(e);
+            drawAndSend(pos.x, pos.y, 'move');
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', (e) => {
+            if (!isDrawer) return;
+            e.preventDefault();
+            isDrawing = false;
+        }, { passive: false });
 
         function drawAndSend(x, y, type) {
             ctx.strokeStyle = strokeColor;
