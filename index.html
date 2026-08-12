@@ -285,7 +285,7 @@
             flex-direction: column; 
             background: #fff;
             position: relative;
-            min-height: 0; /* 모바일 자름 방지 필수 */
+            min-height: 0;
         }
         .canvas-wrapper {
             flex: 1;
@@ -324,6 +324,7 @@
             display: flex; 
             flex-direction: column; 
             flex-shrink: 0;
+            transition: height 0.2s ease;
         }
         .chat-messages { flex: 1; padding: 10px; overflow-y: auto; font-size: 11px; display: flex; flex-direction: column; gap: 6px; }
         .chat-msg { background: #f4f0e6; padding: 6px 8px; border-radius: 6px; word-break: break-all; }
@@ -332,13 +333,13 @@
         
         .chat-input-box { height: 48px; padding: 6px; border-top: 1px solid #ebe6d9; display: flex; gap: 4px; background: #fcfbf8; flex-shrink: 0; }
         .chat-input-box input { flex: 1; padding: 6px; border: 1px solid #dcd7c9; border-radius: 6px; outline: none; font-size: 11px; }
-        .chat-input-box button { height: 34px; padding: 0 8px; background: #39a084; border-radius: 6px; font-size: 12px; }
+        .chat-input-box button { height: 34px; padding: 0 8px; background: #39a084; border-radius: 6px; font-size: 12px; touch-action: manipulation; }
 
         .correct-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); display: none; justify-content: center; align-items: center; z-index: 100; }
         .correct-overlay.show { display: flex; }
         .correct-banner { background: white; padding: 20px 30px; border-radius: 16px; text-align: center; }
 
-      /* 모바일 전용 UI 완벽 대응 (버튼 찌그러짐 및 플레이어 목록 가림 수정) */
+        /* 모바일 UI 보정 */
         @media (max-width: 768px) {
             body { padding: 0; }
             #app { 
@@ -348,11 +349,8 @@
                 border-radius: 0; 
                 border: none; 
             }
-            .game-body { 
-                flex-direction: column; 
-            }
+            .game-body { flex-direction: column; }
             
-            /* 상단 플레이어 목록 및 시작 버튼 레이아웃 */
             .sidebar { 
                 width: 100%; 
                 height: 52px; 
@@ -368,25 +366,22 @@
             }
             .sidebar-title { display: none; }
 
-            /* 플레이어 목록 스크롤 영역 */
             #player-list { 
                 display: flex; 
                 flex-direction: row;
                 gap: 6px; 
                 overflow-x: auto; 
                 overflow-y: hidden;
-                flex: 1; /* 남은 공간 슬라이드 영역으로 채움 */
+                flex: 1; 
                 align-items: center; 
                 padding: 2px 4px;
-                min-width: 0; /* flex 자식 요소 삐져나침 방지 */
+                min-width: 0;
                 -webkit-overflow-scrolling: touch;
             }
 
-            /* 가로 스크롤바 숨김 */
             #player-list::-webkit-scrollbar { display: none; }
             #player-list { -ms-overflow-style: none; scrollbar-width: none; }
 
-            /* 플레이어 카드 세부 스타일 */
             .player-card { 
                 margin-bottom: 0; 
                 white-space: nowrap; 
@@ -420,31 +415,37 @@
                 margin-left: 4px;
             }
 
-            /* 게임 시작 버튼 크기 제한 (화면 전체 차지 방지) */
             #btn-start { 
-                width: auto !important; /* width: 100% 강제 해제 */
+                width: auto !important; 
                 height: 38px; 
                 margin-top: 0; 
                 font-size: 12px; 
                 padding: 0 14px; 
                 white-space: nowrap;
-                flex-shrink: 0; /* 버튼 크기 고정 */
+                flex-shrink: 0;
                 margin-left: 8px;
             }
             
-            /* 캔버스 영역 */
             .canvas-area { 
                 flex: 1; 
                 min-height: 0;
             }
             
-            /* 하단 채팅 영역 */
             .chat-area { 
                 width: 100%; 
                 height: 130px; 
                 border-left: none; 
                 border-top: 1px solid #ebe6d9; 
                 flex-shrink: 0;
+            }
+
+            /* 모바일 키보드 열렸을 때 대응 */
+            body.keyboard-open .chat-area {
+                height: 90px !important;
+            }
+            body.keyboard-open .chat-messages {
+                font-size: 10px;
+                padding: 4px;
             }
         }
     </style>
@@ -456,7 +457,7 @@
     <div id="lobby-screen" class="screen active">
         <div class="brand-header">
             <div class="brand-icon">✏️</div>
-            <span>draw & guess</span>
+            <span>draw.guess</span>
         </div>
 
         <h1 class="hero-title">
@@ -594,7 +595,6 @@
 
     function resizeCanvas() {
         if (!canvasWrapper || canvasWrapper.clientWidth === 0) return;
-        
         const rect = canvasWrapper.getBoundingClientRect();
         canvas.width = rect.width;
         canvas.height = rect.height;
@@ -776,7 +776,11 @@
     }
 
     function startDraw(e) {
-        if (!isMyTurn) return;
+        if (!isMyTurn) {
+            isDrawing = false;
+            return;
+        }
+
         const normPos = getNormalizedPos(e);
         const pixelX = Math.floor(normPos.rx * canvas.width);
         const pixelY = Math.floor(normPos.ry * canvas.height);
@@ -799,7 +803,8 @@
     }
 
     function moveDraw(e) {
-        if (!isDrawing || !isMyTurn || currentTool !== 'pen') return;
+        if (!isMyTurn || !isDrawing || currentTool !== 'pen') return;
+
         const normPos = getNormalizedPos(e);
         const pixelX = normPos.rx * canvas.width;
         const pixelY = normPos.ry * canvas.height;
@@ -825,6 +830,8 @@
     canvas.addEventListener('mousedown', startDraw);
     canvas.addEventListener('mousemove', moveDraw);
     canvas.addEventListener('mouseup', endDraw);
+    window.addEventListener('mouseup', () => { isDrawing = false; });
+    canvas.addEventListener('mouseleave', () => { isDrawing = false; });
 
     canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e); }, { passive: false });
     canvas.addEventListener('touchmove', (e) => { e.preventDefault(); moveDraw(e); }, { passive: false });
@@ -855,10 +862,39 @@
         if (msg) {
             socket.emit('sendMessage', msg);
             chatInput.value = '';
+            chatInput.focus();
         }
     }
-    btnSend.addEventListener('click', sendMessage);
-    chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+
+    btnSend.addEventListener('click', (e) => {
+        e.preventDefault();
+        sendMessage();
+    });
+
+    chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.keyCode === 13) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => {
+            const currentHeight = window.visualViewport.height;
+            if (window.innerHeight - currentHeight > 150) {
+                document.body.classList.add('keyboard-open');
+            } else {
+                document.body.classList.remove('keyboard-open');
+            }
+            resizeCanvas();
+        });
+    }
+
+    chatInput.addEventListener('focus', () => {
+        setTimeout(() => {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }, 300);
+    });
 
     socket.on('updatePlayers', ({ players, hostId }) => {
         playerList.innerHTML = '';
@@ -880,6 +916,7 @@
     });
 
     socket.on('turnStart', ({ drawerId, hintMask }) => {
+        isDrawing = false;
         isMyTurn = (socket.id === drawerId);
         displayWord.innerText = isMyTurn ? '단어 확인 중...' : hintMask;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
