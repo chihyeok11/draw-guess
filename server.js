@@ -80,7 +80,7 @@ function handleLeaveRoom(socket) {
             } else {
                 if (room.hostId === socket.id) room.hostId = room.players[0].id;
 
-                // 🌟 [추가된 핵심 로직] 게임 진행 중 인원이 1명 이하가 되면 대기 상태로 전환
+                // 🌟 게임 진행 중 인원이 1명 이하가 되면 대기 상태로 전환
                 if (room.isPlaying && room.players.length <= 1) {
                     if (room.timer) {
                         clearInterval(room.timer);
@@ -125,6 +125,7 @@ io.on('connection', (socket) => {
             drawerId: null,
             drawerIndex: -1,
             timer: null,
+            timeLeft: 60, // 남은 시간 기록용 변수 추가
             usedWords: [],
             isRoundOver: false
         };
@@ -185,15 +186,15 @@ io.on('connection', (socket) => {
         io.to(roomCode).emit('turnStart', { drawerId: drawer.id, hintMask: `제시어: ${maskWord}` });
         io.to(drawer.id).emit('yourWord', room.currentWord);
 
-        let timeLeft = 60;
-        io.to(roomCode).emit('timerUpdate', timeLeft);
+        room.timeLeft = 60;
+        io.to(roomCode).emit('timerUpdate', room.timeLeft);
 
         if (room.timer) clearInterval(room.timer);
         room.timer = setInterval(() => {
-            timeLeft--;
-            io.to(roomCode).emit('timerUpdate', timeLeft);
+            room.timeLeft--;
+            io.to(roomCode).emit('timerUpdate', room.timeLeft);
 
-            if (timeLeft <= 0) {
+            if (room.timeLeft <= 0) {
                 clearInterval(room.timer);
                 room.isRoundOver = true;
                 io.to(roomCode).emit('chatMessage', { system: true, text: `시간 종료! 정답은 [ ${room.currentWord} ] 이었습니다.` });
@@ -235,10 +236,23 @@ io.on('connection', (socket) => {
                 if (room.isRoundOver) return;
 
                 room.isRoundOver = true;
-                player.score += 100;
+
+                // ⚡ [시간 차등 점수 계산 로직] (최소 20점 ~ 최대 100점)
+                const earnedScore = Math.max(20, Math.floor((room.timeLeft / 60) * 100));
+                player.score += earnedScore;
+
+                // 🎨 그림을 그린 사람에게도 수고 보너스 점수 부여 (+30pt)
+                const drawer = room.players.find(p => p.id === room.drawerId);
+                if (drawer) drawer.score += 30;
+
                 clearInterval(room.timer);
 
-                io.to(roomCode).emit('correctAnswer', { winnerNick: player.nickname, word: room.currentWord });
+                // 클라이언트에 획득 점수 정보를 포함하여 전송
+                io.to(roomCode).emit('correctAnswer', { 
+                    winnerNick: player.nickname, 
+                    word: room.currentWord,
+                    score: earnedScore 
+                });
                 io.to(roomCode).emit('updatePlayers', { players: room.players, hostId: room.hostId });
 
                 // 정답 맞춘 후 2.5초 뒤 인원 체크
