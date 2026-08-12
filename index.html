@@ -196,7 +196,7 @@
             background: #fff; touch-action: none; cursor: crosshair; 
         }
 
-        /* 🎨 툴바 영역 (그리는 사람에게만 표시됨) */
+        /* 🎨 툴바 영역 */
         .toolbar { 
             height: 48px; background: #fcfbf8; border-top: 1px solid #ebe6d9; 
             display: flex; align-items: center; padding: 0 8px; gap: 4px; flex-shrink: 0; overflow-x: auto;
@@ -210,7 +210,7 @@
         .tool-btn.active { background: #39a084; color: white; border-color: #39a084; }
         .color-picker { width: 30px; height: 30px; border: 1px solid #dcd7c9; border-radius: 6px; cursor: pointer; flex-shrink: 0; }
 
-        /* 💬 채팅 영역 스타일 완전 보완 */
+        /* 💬 채팅 영역 스타일 */
         .chat-area { 
             width: 320px; 
             height: 100%; 
@@ -254,14 +254,6 @@
             text-align: center; 
         }
 
-        .chat-msg.correct { 
-            background: #e6f4f1; 
-            border-color: #39a084; 
-            color: #2a735f; 
-            font-weight: 700; 
-            text-align: center; 
-        }
-
         .chat-input-box { 
             height: 52px; 
             padding: 8px; 
@@ -286,7 +278,7 @@
             border-color: #39a084; 
         }
 
-        /* 🏆 오버레이 스타일 추가 */
+        /* 🏆 오버레이 스타일 */
         .correct-overlay { 
             position: absolute; 
             top: 0; 
@@ -351,7 +343,6 @@
             .canvas-area { flex: 1; min-height: 0; }
             .chat-area { width: 100%; height: 140px; border-left: none; border-top: 1px solid #ebe6d9; flex-shrink: 0; }
 
-            /* ⌨️ 키보드 활성화 시 캔버스 극대화 */
             body.keyboard-open .chat-area { height: 42px !important; }
             body.keyboard-open .chat-messages { display: none; }
             body.keyboard-open .chat-input-box { height: 100%; padding: 4px 8px; }
@@ -426,7 +417,6 @@
                 <div class="canvas-wrapper" id="canvas-wrapper">
                     <canvas id="canvas"></canvas>
                 </div>
-                <!-- 🛠️ 툴바 : 그릴 차례가 아닐 때는 hidden 클래스로 안보이게 처리 -->
                 <div class="toolbar hidden" id="toolbar">
                     <button class="tool-btn active" id="tool-pen">✏️ 펜</button>
                     <button class="tool-btn" id="tool-bucket">🪣 채우기</button>
@@ -893,38 +883,33 @@
         saveCanvasState();
     });
 
-    /* 💬 채팅 수신 핸들러 보완 (데이터 형태 범용 처리) */
-    socket.on('newMessage', (data) => {
+    /* 💬 서버 이벤트명(chatMessage)에 맞춘 채팅 수신 핸들러 */
+    socket.on('chatMessage', (data) => {
         const msgDiv = document.createElement('div');
         
-        // 데이터 타입에 따른 CSS 클래스 적용
-        const msgType = typeof data === 'object' ? (data.type || '') : '';
+        let msgType = '';
+        if (data.system) {
+            msgType = 'system';
+        } else if (data.type) {
+            msgType = data.type;
+        }
         msgDiv.className = `chat-msg ${msgType}`.trim();
         
-        if (typeof data === 'string') {
-            // 서버에서 단순 문자열로 올 때
-            msgDiv.textContent = data;
-        } else if (typeof data === 'object') {
-            // 메시지 내용 속성 추출 (message, text, msg 등 다양하게 대응)
-            const textContent = data.message || data.text || data.msg || '';
-            const nick = data.nickname || data.user || data.nick || '';
-
-            if (data.type === 'system' || data.type === 'correct') {
-                msgDiv.textContent = textContent;
-            } else if (nick) {
-                msgDiv.textContent = `${nick}: ${textContent}`;
-            } else {
-                msgDiv.textContent = textContent;
-            }
+        if (data.system) {
+            msgDiv.textContent = data.text;
+        } else {
+            const nick = data.nickname || '익명';
+            const textContent = data.text || '';
+            msgDiv.textContent = `${nick}: ${textContent}`;
         }
         
         chatMessages.appendChild(msgDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
     });
 
-    socket.on('correctAnswer', ({ winner, word }) => {
+    socket.on('correctAnswer', ({ winnerNick, word, score }) => {
         correctTitle.innerText = '🎉 정답입니다!';
-        correctText.innerText = `${winner}님이 정답을 맞추셨습니다!`;
+        correctText.innerText = `${winnerNick}님이 정답을 맞추셨습니다! (+${score}점)`;
         correctWord.innerText = `정답: ${word}`;
         correctOverlay.classList.add('show');
 
