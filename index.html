@@ -203,7 +203,7 @@
         }
 
         .sidebar { 
-            width: 170px; 
+            width: 180px; 
             background: #fcfbf8; 
             border-right: 1px solid #ebe6d9; 
             padding: 10px; 
@@ -214,24 +214,54 @@
         .sidebar-title { font-size: 11px; font-weight: 800; color: #888275; margin-bottom: 8px; }
         #player-list { flex: 1; overflow-y: auto; }
         
+        /* UI 깨짐 해결 스타일 수정 */
         .player-card { 
-            background: white; padding: 8px 10px; border-radius: 8px; border: 1px solid #e8e3d5; 
-            margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 600;
+            background: white; 
+            padding: 8px 10px; 
+            border-radius: 8px; 
+            border: 1px solid #e8e3d5; 
+            margin-bottom: 6px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            font-size: 12px; 
+            font-weight: 600;
+            gap: 6px;
         }
         .player-card.drawing { border: 2px solid #f77f5d; background: #fff8f6; }
         
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            min-width: 0;
+            flex: 1;
+        }
+        
+        .player-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            word-break: keep-all;
+        }
+
         .host-badge {
             background: #fff8d6;
             color: #d97706;
             border: 1px solid #fef08a;
-            padding: 2px 6px;
+            padding: 2px 5px;
             border-radius: 6px;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 800;
-            display: inline-flex;
-            align-items: center;
-            gap: 2px;
-            margin-right: 4px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .player-score {
+            color: #39a084;
+            font-weight: 800;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         #btn-start { height: 38px; background: #39a084; border-radius: 8px; font-size: 13px; margin-top: 6px; }
@@ -713,6 +743,7 @@
     btnSend.addEventListener('click', sendMessage);
     chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
 
+    // 수정된 플레이어 리스트 렌더링 부분
     socket.on('updatePlayers', ({ players, hostId }) => {
         playerList.innerHTML = '';
         players.forEach(p => {
@@ -720,7 +751,13 @@
             card.className = `player-card ${p.isDrawing ? 'drawing' : ''}`;
             
             const hostTag = p.id === hostId ? `<span class="host-badge">👑 방장</span>` : '';
-            card.innerHTML = `<div style="display:flex; align-items:center;">${hostTag}<span>${p.nickname}</span></div><b style="color:#39a084">${p.score}점</b>`;
+            card.innerHTML = `
+                <div class="player-info">
+                    ${hostTag}
+                    <span class="player-name">${p.nickname}</span>
+                </div>
+                <b class="player-score">${p.score}점</b>
+            `;
             playerList.appendChild(card);
         });
         btnStart.style.display = (socket.id === hostId) ? 'block' : 'none';
