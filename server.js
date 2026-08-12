@@ -10,7 +10,7 @@ app.use(express.static(__dirname));
 const rooms = {};
 const userRooms = {};
 
-// 200개 이상의 방대한 제시어 목록
+// 제시어 목록
 const WORDS = [
     // 동물 & 식물
     '호랑이', '사자', '기린', '코끼리', '얼룩말', '펭귄', '돌고래', '상어', '문어', '오징어',
@@ -23,7 +23,7 @@ const WORDS = [
     '아이스크림', '도넛', '마카롱', '케이크', '붕어빵', '감자튀김', '핫도그', '팝콘', '샌드위치', '계란후라이',
     
     // 사물 & 가전제품
-    '컴퓨터', '스마트폰', '노트북', '헤드폰', '마우스', '키보드', 'televison', '냉장고', '세탁기', '선풍기',
+    '컴퓨터', '스마트폰', '노트북', '헤드폰', '마우스', '키보드', '냉장고', '세탁기', '선풍기',
     '에어컨', '청소기', '전자레인지', '드라이기', '시계', '거울', '우산', '안경', '선글라스', '지갑',
     '열쇠', '가방', '모자', '신발', '양말', '장갑', '지우개', '연필', '가위', '자물쇠',
     
@@ -44,8 +44,19 @@ const WORDS = [
     '피아노', '기타', '드럼', '바이올린', '체스', '낚시', '캠핑', '등산', '사진', '스노클링'
 ];
 
-function getRandomWord() {
-    return WORDS[Math.floor(Math.random() * WORDS.length)];
+// 중복되지 않도록 무작위 단어 가져오기
+function getRandomWord(room) {
+    if (!room.usedWords) room.usedWords = [];
+    
+    let availableWords = WORDS.filter(w => !room.usedWords.includes(w));
+    if (availableWords.length === 0) {
+        room.usedWords = []; // 모든 단어를 다 쓰면 초기화
+        availableWords = [...WORDS];
+    }
+
+    const selectedWord = availableWords[Math.floor(Math.random() * availableWords.length)];
+    room.usedWords.push(selectedWord);
+    return selectedWord;
 }
 
 function generateRoomCode() {
@@ -86,7 +97,9 @@ io.on('connection', (socket) => {
             currentWord: '',
             drawerId: null,
             drawerIndex: -1,
-            timer: null
+            timer: null,
+            usedWords: [],
+            isRoundOver: false // 라운드 종료 상태 (동시 정답 방지용)
         };
         userRooms[socket.id] = roomCode;
         socket.join(roomCode);
@@ -123,6 +136,7 @@ io.on('connection', (socket) => {
 
         room.isPlaying = true;
         room.drawerIndex = -1;
+        room.usedWords = [];
         startNextTurn(roomCode);
     });
 
@@ -130,15 +144,15 @@ io.on('connection', (socket) => {
         const room = rooms[roomCode];
         if (!room || room.players.length === 0) return;
 
+        room.isRoundOver = false; // 새로운 턴 시작 시 플래그 리셋
         room.drawerIndex = (room.drawerIndex + 1) % room.players.length;
         const drawer = room.players[room.drawerIndex];
         room.drawerId = drawer.id;
-        room.currentWord = getRandomWord();
+        room.currentWord = getRandomWord(room); // 제시어 중복 방지 호출
 
         room.players.forEach(p => p.isDrawing = (p.id === drawer.id));
         io.to(roomCode).emit('updatePlayers', { players: room.players, hostId: room.hostId });
 
-        // 글자 수만큼 _ (밑줄)로 표시 (예: 3글자 -> _ _ _)
         const maskWord = '_ '.repeat(room.currentWord.length).trim();
         io.to(roomCode).emit('turnStart', { drawerId: drawer.id, hintMask: `제시어: ${maskWord}` });
         io.to(drawer.id).emit('yourWord', room.currentWord);
@@ -153,6 +167,7 @@ io.on('connection', (socket) => {
 
             if (timeLeft <= 0) {
                 clearInterval(room.timer);
+                room.isRoundOver = true;
                 io.to(roomCode).emit('chatMessage', { system: true, text: `시간 종료! 정답은 [ ${room.currentWord} ] 이었습니다.` });
                 setTimeout(() => startNextTurn(roomCode), 3000);
             }
@@ -182,10 +197,17 @@ io.on('connection', (socket) => {
         const player = room.players.find(p => p.id === socket.id);
         if (!player) return;
 
+        // 정답 검사
         if (room.isPlaying && room.currentWord) {
             if (msg.trim().toLowerCase() === room.currentWord.toLowerCase()) {
+                // 그림 출제자는 정답을 맞춰도 무효
                 if (socket.id === room.drawerId) return;
 
+                // 이미 정답자가 나온 라운드라면 무시 (동시 정답 방지 핵심)
+                if (room.isRoundOver) return;
+
+                // 선착순 1명만 정답 처리
+                room.isRoundOver = true;
                 player.score += 100;
                 clearInterval(room.timer);
 
