@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 10000;
 
 app.use(express.static(__dirname));
 
-// 데이터 구조 정의 (상단 선언 필수)
+// 데이터 구조 정의
 const rooms = {};      // 방 정보 저장
 const userRooms = {};  // socket.id -> roomCode 매핑
 
@@ -20,6 +20,30 @@ function getRandomWord() {
 
 function generateRoomCode() {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
+function handleLeaveRoom(socket) {
+    const roomCode = userRooms[socket.id];
+    if (!roomCode) return;
+
+    const room = rooms[roomCode];
+    if (room) {
+        const index = room.players.findIndex(p => p.id === socket.id);
+        if (index !== -1) {
+            const disconnectedPlayer = room.players.splice(index, 1)[0];
+            socket.leave(roomCode);
+            io.to(roomCode).emit('chatMessage', { system: true, text: `${disconnectedPlayer.nickname}님이 퇴장하셨습니다.` });
+
+            if (room.players.length === 0) {
+                if (room.timer) clearInterval(room.timer);
+                delete rooms[roomCode];
+            } else {
+                if (room.hostId === socket.id) room.hostId = room.players[0].id; // 방장 자동 위임
+                io.to(roomCode).emit('updatePlayers', { players: room.players, hostId: room.hostId });
+            }
+        }
+    }
+    delete userRooms[socket.id];
 }
 
 io.on('connection', (socket) => {
@@ -60,7 +84,7 @@ io.on('connection', (socket) => {
         io.to(code).emit('chatMessage', { system: true, text: `${userNick}님이 입장했습니다.` });
     });
 
-    // 3. 게임 시작 (최소 2명 이상 제한)
+    // 3. 게임 시작
     socket.on('startGame', () => {
         const roomCode = userRooms[socket.id];
         const room = rooms[roomCode];
@@ -75,7 +99,6 @@ io.on('connection', (socket) => {
         startNextTurn(roomCode);
     });
 
-    // 턴 진행 로직
     function startNextTurn(roomCode) {
         const room = rooms[roomCode];
         if (!room || room.players.length === 0) return;
@@ -124,7 +147,7 @@ io.on('connection', (socket) => {
         if (roomCode) io.to(roomCode).emit('clearCanvas');
     });
 
-    // 5. 채팅 및 정답 판정 (대기실에서도 채팅 가능)
+    // 5. 채팅 및 정답 판정
     socket.on('sendMessage', (msg) => {
         const roomCode = userRooms[socket.id];
         const room = rooms[roomCode];
@@ -133,10 +156,9 @@ io.on('connection', (socket) => {
         const player = room.players.find(p => p.id === socket.id);
         if (!player) return;
 
-        // 게임 진행 중일 때 정답 판정
         if (room.isPlaying && room.currentWord) {
             if (msg.trim().toLowerCase() === room.currentWord.toLowerCase()) {
-                if (socket.id === room.drawerId) return; // 그리는 사람은 정답 칠 수 없음
+                if (socket.id === room.drawerId) return;
 
                 player.score += 100;
                 clearInterval(room.timer);
@@ -149,32 +171,16 @@ io.on('connection', (socket) => {
             }
         }
 
-        // 일반 채팅 메시지 출력 (대기실 포함)
         io.to(roomCode).emit('chatMessage', { nickname: player.nickname, text: msg, system: false });
     });
 
-    // 6. 퇴장 처리
+    // 6. 방 나가기 및 퇴장 처리
+    socket.on('leaveRoom', () => {
+        handleLeaveRoom(socket);
+    });
+
     socket.on('disconnect', () => {
-        const roomCode = userRooms[socket.id];
-        if (!roomCode) return;
-
-        const room = rooms[roomCode];
-        if (room) {
-            const index = room.players.findIndex(p => p.id === socket.id);
-            if (index !== -1) {
-                const disconnectedPlayer = room.players.splice(index, 1)[0];
-                io.to(roomCode).emit('chatMessage', { system: true, text: `${disconnectedPlayer.nickname}님이 퇴장하셨습니다.` });
-
-                if (room.players.length === 0) {
-                    if (room.timer) clearInterval(room.timer);
-                    delete rooms[roomCode];
-                } else {
-                    if (room.hostId === socket.id) room.hostId = room.players[0].id; // 방장 위임
-                    io.to(roomCode).emit('updatePlayers', { players: room.players, hostId: room.hostId });
-                }
-            }
-        }
-        delete userRooms[socket.id];
+        handleLeaveRoom(socket);
     });
 });
 
