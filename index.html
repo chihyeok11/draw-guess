@@ -363,22 +363,40 @@
             display: flex; 
             flex-direction: column; 
             flex-shrink: 0;
-            transition: height 0.2s ease;
+            transition: all 0.2s ease;
         }
         .chat-messages { flex: 1; padding: 10px; overflow-y: auto; font-size: 11px; display: flex; flex-direction: column; gap: 6px; }
         .chat-msg { background: #f4f0e6; padding: 6px 8px; border-radius: 6px; word-break: break-all; }
         .chat-msg.system { background: #feeaa1; font-weight: 700; text-align: center; }
         .chat-msg.correct { background: #39a084; color: white; font-weight: 700; text-align: center; }
         
-        .chat-input-box { height: 48px; padding: 6px; border-top: 1px solid #ebe6d9; display: flex; gap: 4px; background: #fcfbf8; flex-shrink: 0; }
-        .chat-input-box input { flex: 1; padding: 6px; border: 1px solid #dcd7c9; border-radius: 6px; outline: none; font-size: 11px; }
-        .chat-input-box button { height: 34px; padding: 0 8px; background: #39a084; border-radius: 6px; font-size: 12px; touch-action: manipulation; }
+        /* ✉️ 전송 버튼을 없앤 단일 입력 창 디자인 */
+        .chat-input-box { 
+            height: 48px; 
+            padding: 6px; 
+            border-top: 1px solid #ebe6d9; 
+            display: flex; 
+            background: #fcfbf8; 
+            flex-shrink: 0; 
+        }
+        .chat-input-box input { 
+            width: 100%; 
+            padding: 6px 12px; 
+            border: 1px solid #dcd7c9; 
+            border-radius: 8px; 
+            outline: none; 
+            font-size: 12px; 
+            background: #ffffff;
+        }
+        .chat-input-box input:focus {
+            border-color: #39a084;
+        }
 
         .correct-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); display: none; justify-content: center; align-items: center; z-index: 100; }
         .correct-overlay.show { display: flex; }
         .correct-banner { background: white; padding: 20px 30px; border-radius: 16px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
 
-        /* 모바일 UI 보정 */
+        /* 📱 모바일 UI 최적화 */
         @media (max-width: 768px) {
             body { padding: 0; }
             #app { 
@@ -392,7 +410,7 @@
             
             .sidebar { 
                 width: 100%; 
-                height: 52px; 
+                height: 48px; 
                 flex-direction: row; 
                 align-items: center; 
                 justify-content: space-between;
@@ -425,8 +443,8 @@
                 margin-bottom: 0; 
                 white-space: nowrap; 
                 padding: 4px 8px; 
-                height: 38px;
-                min-width: 100px;
+                height: 36px;
+                min-width: 95px;
                 flex-shrink: 0;
                 display: flex;
                 align-items: center;
@@ -443,7 +461,7 @@
 
             .player-name {
                 font-size: 11px;
-                max-width: 55px;
+                max-width: 50px;
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
@@ -456,13 +474,13 @@
 
             #btn-start { 
                 width: auto !important; 
-                height: 38px; 
+                height: 36px; 
                 margin-top: 0; 
                 font-size: 12px; 
-                padding: 0 14px; 
+                padding: 0 12px; 
                 white-space: nowrap;
                 flex-shrink: 0;
-                margin-left: 8px;
+                margin-left: 6px;
             }
             
             .canvas-area { 
@@ -472,18 +490,25 @@
             
             .chat-area { 
                 width: 100%; 
-                height: 130px; 
+                height: 120px; 
                 border-left: none; 
                 border-top: 1px solid #ebe6d9; 
                 flex-shrink: 0;
             }
 
+            /* ⌨️ 모바일 키보드가 활성화되었을 때 채팅 영역을 최소화하여 그림(캔버스) 영역 확보 */
             body.keyboard-open .chat-area {
-                height: 90px !important;
+                height: 42px !important;
             }
             body.keyboard-open .chat-messages {
-                font-size: 10px;
-                padding: 4px;
+                display: none; /* 이전 메세지 숨기고 입력창만 표시하여 캔버스 확보 */
+            }
+            body.keyboard-open .chat-input-box {
+                height: 100%;
+                padding: 4px 8px;
+            }
+            body.keyboard-open .sidebar {
+                display: none; /* 키보드 칠 때 플레이어 리스트도 숨겨 캔버스 공간 최대화 */
             }
         }
     </style>
@@ -569,8 +594,7 @@
             <div class="chat-area">
                 <div class="chat-messages" id="chat-messages"></div>
                 <div class="chat-input-box">
-                    <input type="text" id="chat-input" placeholder="정답/채팅 입력..." maxlength="50">
-                    <button id="btn-send" class="submit-btn">전송</button>
+                    <input type="text" id="chat-input" placeholder="정답/채팅 입력 후 엔터..." maxlength="50" enterkeyhint="send">
                 </div>
             </div>
         </div>
@@ -606,7 +630,6 @@
     const btnStart = document.getElementById('btn-start');
     const chatMessages = document.getElementById('chat-messages');
     const chatInput = document.getElementById('chat-input');
-    const btnSend = document.getElementById('btn-send');
 
     const canvasWrapper = document.getElementById('canvas-wrapper');
     const canvas = document.getElementById('canvas');
@@ -908,20 +931,16 @@
         socket.emit('clearCanvas');
     });
 
+    // 💬 채팅/정답 즉시 전송 함수
     function sendMessage() {
         const msg = chatInput.value.trim();
         if (msg) {
             socket.emit('sendMessage', msg);
             chatInput.value = '';
-            chatInput.focus();
         }
     }
 
-    btnSend.addEventListener('click', (e) => {
-        e.preventDefault();
-        sendMessage();
-    });
-
+    // 모바일/PC 엔터 키 감지 (완료/전송 버튼 대응)
     chatInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.keyCode === 13) {
             e.preventDefault();
@@ -929,23 +948,19 @@
         }
     });
 
+    // 📱 모바일 키보드 상태 감지 및 화면 자동 조절
     if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', () => {
             const currentHeight = window.visualViewport.height;
-            if (window.innerHeight - currentHeight > 150) {
+            if (window.innerHeight - currentHeight > 120) {
                 document.body.classList.add('keyboard-open');
             } else {
                 document.body.classList.remove('keyboard-open');
             }
-            resizeCanvas();
+            // 키보드가 나타나거나 사라질 때 캔버스 영역 재계산
+            setTimeout(resizeCanvas, 50);
         });
     }
-
-    chatInput.addEventListener('focus', () => {
-        setTimeout(() => {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }, 300);
-    });
 
     socket.on('updatePlayers', ({ players, hostId }) => {
         playerList.innerHTML = '';
