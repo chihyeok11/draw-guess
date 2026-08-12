@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>draw.guess - 캐치마인드</title>
-    <!-- 구글 폰트 적용 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
@@ -42,7 +41,6 @@
         .screen { display: none; width: 100%; height: 100%; }
         .screen.active { display: flex; flex-direction: column; }
 
-        /* 로비 화면 */
         #lobby-screen { 
             background-color: #f8f6f0;
             background-image: radial-gradient(#e3decb 1.5px, transparent 1.5px);
@@ -61,7 +59,7 @@
             font-size: clamp(18px, 4vw, 22px);
             font-weight: 800;
             color: #1a1a2e;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
         }
         .brand-icon {
             width: 30px;
@@ -73,18 +71,6 @@
             justify-content: center;
             color: white;
             font-size: 14px;
-        }
-
-        .badge {
-            background: #f77f5d;
-            color: white;
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            padding: 4px 12px;
-            border-radius: 20px;
-            margin-bottom: 12px;
-            text-transform: uppercase;
         }
 
         .hero-title {
@@ -175,7 +161,6 @@
             cursor: pointer;
         }
 
-        /* 게임 화면 헤더 */
         #game-screen { position: relative; width: 100%; height: 100%; }
 
         header { 
@@ -193,10 +178,9 @@
         .header-right { display: flex; align-items: center; gap: 10px; }
         .room-info { font-weight: 700; font-size: 13px; color: #555; }
         .room-info span { color: #39a084; font-weight: 800; }
-        .word-box { font-size: 15px; font-weight: 800; color: #f77f5d; background: #fff1ed; padding: 4px 14px; border-radius: 16px; }
+        .word-box { font-size: 16px; font-weight: 800; color: #f77f5d; background: #fff1ed; padding: 4px 16px; border-radius: 16px; letter-spacing: 2px; }
         .timer-box { font-size: 14px; font-weight: 800; color: #39a084; }
         
-        /* 나가기 버튼 스타일 */
         .btn-leave {
             background: #fee2e2;
             color: #ef4444;
@@ -335,8 +319,6 @@
             <div class="brand-icon">✏️</div>
             <span>draw.guess</span>
         </div>
-
-        <div class="badge">✨ NO TALENT REQUIRED</div>
 
         <h1 class="hero-title">
             Make a mark.<br>
@@ -509,7 +491,6 @@
         }
     });
 
-    // 방 나가기 기능 구현
     btnLeave.addEventListener('click', () => {
         if (confirm('방에서 나가시겠습니까?')) {
             socket.emit('leaveRoom');
@@ -545,7 +526,6 @@
         }
     }
 
-    // 수정된 페인트통 (Flood Fill) 기능
     function floodFill(startX, startY, fillColorHex) {
         const width = canvas.width;
         const height = canvas.height;
