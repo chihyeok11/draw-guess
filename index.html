@@ -42,7 +42,7 @@
         .screen { display: none; width: 100%; height: 100%; }
         .screen.active { display: flex; flex-direction: column; }
 
-        /* ================= 1. 로비 화면 ================= */
+        /* 로비 화면 */
         #lobby-screen { 
             background-color: #f8f6f0;
             background-image: radial-gradient(#e3decb 1.5px, transparent 1.5px);
@@ -175,7 +175,7 @@
             cursor: pointer;
         }
 
-        /* ================= 2. 게임 화면 ================= */
+        /* 게임 화면 */
         #game-screen { position: relative; width: 100%; height: 100%; }
 
         header { 
@@ -201,7 +201,6 @@
             overflow: hidden;
         }
 
-        /* 사이드바 */
         .sidebar { 
             width: 170px; 
             background: #fcfbf8; 
@@ -220,7 +219,6 @@
         }
         .player-card.drawing { border: 2px solid #f77f5d; background: #fff8f6; }
         
-        /* 👑 노란색 왕관 방장 스타일 */
         .host-badge {
             background: #fff8d6;
             color: #d97706;
@@ -237,7 +235,6 @@
 
         #btn-start { height: 38px; background: #39a084; border-radius: 8px; font-size: 13px; margin-top: 6px; }
 
-        /* 캔버스 영역 */
         .canvas-area { 
             flex: 1; 
             display: flex; 
@@ -261,7 +258,6 @@
             cursor: crosshair; 
         }
 
-        /* 툴바 */
         .toolbar { 
             height: 48px; background: #fcfbf8; border-top: 1px solid #ebe6d9; 
             display: flex; align-items: center; padding: 0 8px; gap: 4px; flex-shrink: 0;
@@ -275,7 +271,6 @@
         .tool-btn.active { background: #39a084; color: white; border-color: #39a084; }
         .color-picker { width: 30px; height: 30px; border: 1px solid #dcd7c9; border-radius: 6px; cursor: pointer; flex-shrink: 0; }
 
-        /* 채팅 영역 */
         .chat-area { 
             width: 220px; 
             border-left: 1px solid #ebe6d9; 
@@ -293,12 +288,10 @@
         .chat-input-box input { flex: 1; padding: 6px; border: 1px solid #dcd7c9; border-radius: 6px; outline: none; font-size: 11px; }
         .chat-input-box button { height: 34px; padding: 0 8px; background: #39a084; border-radius: 6px; font-size: 12px; }
 
-        /* 정답 팝업 */
         .correct-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); display: none; justify-content: center; align-items: center; z-index: 100; }
         .correct-overlay.show { display: flex; }
         .correct-banner { background: white; padding: 20px 30px; border-radius: 16px; text-align: center; }
 
-        /* 모바일 대응 */
         @media (max-width: 768px) {
             body { padding: 0; }
             #app { height: 100vh; max-height: 100vh; border-radius: 0; border: none; }
@@ -319,7 +312,7 @@
 <body>
 
 <div id="app">
-    <!-- 1. 로비 화면 -->
+    <!-- 로비 화면 -->
     <div id="lobby-screen" class="screen active">
         <div class="brand-header">
             <div class="brand-icon">✏️</div>
@@ -361,7 +354,7 @@
         </div>
     </div>
 
-    <!-- 2. 게임 화면 -->
+    <!-- 게임 화면 -->
     <div id="game-screen" class="screen">
         <header>
             <div class="room-info">방 코드: <span id="display-room-code">------</span></div>
@@ -370,14 +363,12 @@
         </header>
 
         <div class="game-body">
-            <!-- 사이드바 -->
             <div class="sidebar">
                 <div class="sidebar-title">PLAYERS</div>
                 <div id="player-list"></div>
                 <button id="btn-start" class="submit-btn" style="display:none;">게임 시작</button>
             </div>
 
-            <!-- 캔버스 영역 -->
             <div class="canvas-area">
                 <div class="canvas-wrapper" id="canvas-wrapper">
                     <canvas id="canvas"></canvas>
@@ -393,7 +384,6 @@
                 </div>
             </div>
 
-            <!-- 채팅 영역 -->
             <div class="chat-area">
                 <div class="chat-messages" id="chat-messages"></div>
                 <div class="chat-input-box">
@@ -659,7 +649,6 @@
     btnSend.addEventListener('click', sendMessage);
     chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
 
-    // 👑 방장 표기 적용 (노란색 왕관 배지)
     socket.on('updatePlayers', ({ players, hostId }) => {
         playerList.innerHTML = '';
         players.forEach(p => {
