@@ -100,20 +100,29 @@ io.on('connection', (socket) => {
     }
 
     socket.on('startGame', () => {
-        const room = rooms[currentRoom];
-        if (!room) return;
-        
-        if (room.hostId !== socket.id) {
-            socket.emit('errorMessage', '방장만 게임을 시작할 수 있습니다.');
-            return;
-        }
+    const roomCode = userRooms[socket.id];
+    const room = rooms[roomCode];
 
-        if (room.isPlaying) return;
+    if (!room) return;
 
-        io.to(currentRoom).emit('gameStarted');
-        nextTurn(currentRoom);
-    });
+    // 방장만 시작 가능
+    if (room.hostId !== socket.id) {
+        return socket.emit('errorMessage', '방장만 게임을 시작할 수 있습니다.');
+    }
 
+    // 최소 2명 이상인지 확인
+    if (room.players.length < 2) {
+        return socket.emit('errorMessage', '최소 2명 이상 모여야 게임을 시작할 수 있습니다.');
+    }
+
+    // 이미 게임이 진행 중인지 확인
+    if (room.isPlaying) {
+        return socket.emit('errorMessage', '이미 게임이 진행 중입니다.');
+    }
+
+    // 게임 시작 로직 실행
+    startNextTurn(roomCode);
+});
     function nextTurn(roomCode) {
         const room = rooms[roomCode];
         if (!room) return;
