@@ -210,34 +210,57 @@
         .tool-btn.active { background: #39a084; color: white; border-color: #39a084; }
         .color-picker { width: 30px; height: 30px; border: 1px solid #dcd7c9; border-radius: 6px; cursor: pointer; flex-shrink: 0; }
 
-        /* 💬 채팅 영역 수정 완료 */
+        /* 💬 채팅 영역 스타일 완전 보완 */
         .chat-area { 
             width: 320px; 
-            height: 100%;
+            height: 100%; 
             border-left: 1px solid #ebe6d9; 
             background: #fff; 
             display: flex; 
             flex-direction: column; 
             flex-shrink: 0; 
             transition: all 0.2s ease;
-            overflow: hidden;
+            overflow: hidden; 
         }
 
         .chat-messages { 
             flex: 1; 
-            min-height: 0; /* flex 자식 스크롤 정상 동작을 위해 필수 */
+            min-height: 0; 
             padding: 12px; 
             overflow-y: auto; 
             font-size: 12px; 
             display: flex; 
             flex-direction: column; 
             gap: 6px; 
-            background: #fdfcf9;
+            background: #fdfcf9; 
         }
 
-        .chat-msg { background: #f4f0e6; padding: 6px 8px; border-radius: 6px; word-break: break-all; }
-        .chat-msg.system { background: #feeaa1; font-weight: 700; text-align: center; }
-        .chat-msg.correct { background: #39a084; color: white; font-weight: 700; text-align: center; }
+        .chat-msg { 
+            background: #ffffff; 
+            border: 1px solid #eae5d9; 
+            padding: 6px 10px; 
+            border-radius: 8px; 
+            word-break: break-all; 
+            line-height: 1.4;
+            color: #1a1a2e;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+
+        .chat-msg.system { 
+            background: #fff8d6; 
+            border-color: #fef08a; 
+            color: #b45309; 
+            font-weight: 700; 
+            text-align: center; 
+        }
+
+        .chat-msg.correct { 
+            background: #e6f4f1; 
+            border-color: #39a084; 
+            color: #2a735f; 
+            font-weight: 700; 
+            text-align: center; 
+        }
 
         .chat-input-box { 
             height: 52px; 
@@ -250,7 +273,7 @@
 
         .chat-input-box input { 
             width: 100%; 
-            height: 100%;
+            height: 100%; 
             padding: 0 12px; 
             border: 1px solid #dcd7c9; 
             border-radius: 8px; 
@@ -259,11 +282,35 @@
             background: #ffffff; 
         }
 
-        .chat-input-box input:focus { border-color: #39a084; }
+        .chat-input-box input:focus { 
+            border-color: #39a084; 
+        }
 
-        .correct-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); display: none; justify-content: center; align-items: center; z-index: 100; }
-        .correct-overlay.show { display: flex; }
-        .correct-banner { background: white; padding: 20px 30px; border-radius: 16px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        /* 🏆 오버레이 스타일 추가 */
+        .correct-overlay { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.4); 
+            display: none; 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 100; 
+        }
+
+        .correct-overlay.show { 
+            display: flex; 
+        }
+
+        .correct-banner { 
+            background: white; 
+            padding: 24px 36px; 
+            border-radius: 16px; 
+            text-align: center; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15); 
+        }
 
         /* 📱 모바일 UI 최적화 */
         @media (max-width: 768px) {
@@ -453,8 +500,8 @@
     let myNickname = '';
     let isMyTurn = false;
     let isDrawing = false;
-    let isGameStarted = false; // 🎮 게임 진행 여부 플래그
-    let isHostUser = false;    // 👑 방장 여부 플래그
+    let isGameStarted = false; 
+    let isHostUser = false;    
     let currentTool = 'pen';
     let canvasHistory = [];
     let historyStep = -1;
@@ -637,7 +684,6 @@
         isHostUser = isHost;
         isGameStarted = false;
         
-        // 대기 중에는 게임 시작 버튼 표시 (방장만)
         btnStart.style.display = isHostUser ? 'block' : 'none';
         
         setTimeout(() => {
@@ -784,7 +830,6 @@
             playerList.appendChild(card);
         });
 
-        // 🎮 게임이 시작되지 않은 대기 상태일 때만 방장에게 시작 버튼 표시
         if (!isGameStarted) {
             btnStart.style.display = isHostUser ? 'block' : 'none';
         } else {
@@ -794,12 +839,11 @@
 
     socket.on('turnStart', ({ drawerId, hintMask }) => {
         isGameStarted = true;
-        btnStart.style.display = 'none'; // 🚫 게임 진행 중에는 시작 버튼 무조건 제거
+        btnStart.style.display = 'none';
         
         isDrawing = false;
         isMyTurn = (socket.id === drawerId);
         
-        // 🛠️ 그리는 사람에게만 툴바를 노출, 맞히는 사람은 툴바 제거하여 캔버스 공간 최대 확보
         if (isMyTurn) {
             toolbar.classList.remove('hidden');
         } else {
@@ -849,14 +893,29 @@
         saveCanvasState();
     });
 
+    /* 💬 채팅 수신 핸들러 보완 (데이터 형태 범용 처리) */
     socket.on('newMessage', (data) => {
         const msgDiv = document.createElement('div');
-        msgDiv.className = `chat-msg ${data.type || ''}`;
         
-        if (data.type === 'system' || data.type === 'correct') {
-            msgDiv.textContent = data.message;
-        } else {
-            msgDiv.textContent = `${data.nickname}: ${data.message}`;
+        // 데이터 타입에 따른 CSS 클래스 적용
+        const msgType = typeof data === 'object' ? (data.type || '') : '';
+        msgDiv.className = `chat-msg ${msgType}`.trim();
+        
+        if (typeof data === 'string') {
+            // 서버에서 단순 문자열로 올 때
+            msgDiv.textContent = data;
+        } else if (typeof data === 'object') {
+            // 메시지 내용 속성 추출 (message, text, msg 등 다양하게 대응)
+            const textContent = data.message || data.text || data.msg || '';
+            const nick = data.nickname || data.user || data.nick || '';
+
+            if (data.type === 'system' || data.type === 'correct') {
+                msgDiv.textContent = textContent;
+            } else if (nick) {
+                msgDiv.textContent = `${nick}: ${textContent}`;
+            } else {
+                msgDiv.textContent = textContent;
+            }
         }
         
         chatMessages.appendChild(msgDiv);
