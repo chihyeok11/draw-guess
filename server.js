@@ -44,13 +44,12 @@ const WORDS = [
     '피아노', '기타', '드럼', '바이올린', '체스', '낚시', '캠핑', '등산', '사진', '스노클링'
 ];
 
-// 중복되지 않도록 무작위 단어 가져오기
 function getRandomWord(room) {
     if (!room.usedWords) room.usedWords = [];
     
     let availableWords = WORDS.filter(w => !room.usedWords.includes(w));
     if (availableWords.length === 0) {
-        room.usedWords = []; // 모든 단어를 다 쓰면 초기화
+        room.usedWords = [];
         availableWords = [...WORDS];
     }
 
@@ -99,7 +98,7 @@ io.on('connection', (socket) => {
             drawerIndex: -1,
             timer: null,
             usedWords: [],
-            isRoundOver: false // 라운드 종료 상태 (동시 정답 방지용)
+            isRoundOver: false
         };
         userRooms[socket.id] = roomCode;
         socket.join(roomCode);
@@ -144,11 +143,11 @@ io.on('connection', (socket) => {
         const room = rooms[roomCode];
         if (!room || room.players.length === 0) return;
 
-        room.isRoundOver = false; // 새로운 턴 시작 시 플래그 리셋
+        room.isRoundOver = false;
         room.drawerIndex = (room.drawerIndex + 1) % room.players.length;
         const drawer = room.players[room.drawerIndex];
         room.drawerId = drawer.id;
-        room.currentWord = getRandomWord(room); // 제시어 중복 방지 호출
+        room.currentWord = getRandomWord(room);
 
         room.players.forEach(p => p.isDrawing = (p.id === drawer.id));
         io.to(roomCode).emit('updatePlayers', { players: room.players, hostId: room.hostId });
@@ -197,16 +196,11 @@ io.on('connection', (socket) => {
         const player = room.players.find(p => p.id === socket.id);
         if (!player) return;
 
-        // 정답 검사
         if (room.isPlaying && room.currentWord) {
             if (msg.trim().toLowerCase() === room.currentWord.toLowerCase()) {
-                // 그림 출제자는 정답을 맞춰도 무효
                 if (socket.id === room.drawerId) return;
-
-                // 이미 정답자가 나온 라운드라면 무시 (동시 정답 방지 핵심)
                 if (room.isRoundOver) return;
 
-                // 선착순 1명만 정답 처리
                 room.isRoundOver = true;
                 player.score += 100;
                 clearInterval(room.timer);
@@ -222,13 +216,8 @@ io.on('connection', (socket) => {
         io.to(roomCode).emit('chatMessage', { nickname: player.nickname, text: msg, system: false });
     });
 
-    socket.on('leaveRoom', () => {
-        handleLeaveRoom(socket);
-    });
-
-    socket.on('disconnect', () => {
-        handleLeaveRoom(socket);
-    });
+    socket.on('leaveRoom', () => { handleLeaveRoom(socket); });
+    socket.on('disconnect', () => { handleLeaveRoom(socket); });
 });
 
 http.listen(PORT, () => {
