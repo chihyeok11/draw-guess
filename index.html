@@ -21,7 +21,7 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            overscroll-behavior: none; /* 모바일 바운스/스크롤 방지 */
+            overscroll-behavior: none;
         }
 
         body { 
@@ -65,34 +65,17 @@
 
         /* 🎬 슬라이드 애니메이션 효과 */
         @keyframes slideInRight {
-            from {
-                opacity: 0;
-                transform: translateX(40px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+            from { opacity: 0; transform: translateX(40px); }
+            to { opacity: 1; transform: translateX(0); }
         }
 
         @keyframes slideInLeft {
-            from {
-                opacity: 0;
-                transform: translateX(-40px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+            from { opacity: 0; transform: translateX(-40px); }
+            to { opacity: 1; transform: translateX(0); }
         }
 
-        .screen.slide-in-right {
-            animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        .screen.slide-in-left {
-            animation: slideInLeft 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
+        .screen.slide-in-right { animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .screen.slide-in-left { animation: slideInLeft 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
         #lobby-screen { 
             background-color: #f8f6f0;
@@ -105,127 +88,62 @@
         }
 
         .brand-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-family: 'Syne', sans-serif;
-            font-size: clamp(18px, 4vw, 22px);
-            font-weight: 800;
-            color: #1a1a2e;
-            margin-bottom: 16px;
+            display: flex; align-items: center; gap: 8px;
+            font-family: 'Syne', sans-serif; font-size: clamp(18px, 4vw, 22px);
+            font-weight: 800; color: #1a1a2e; margin-bottom: 16px;
         }
         .brand-icon {
-            width: 30px;
-            height: 30px;
-            background: #39a084;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 14px;
+            width: 30px; height: 30px; background: #39a084; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; color: white; font-size: 14px;
         }
 
         .hero-title {
-            font-family: 'Syne', sans-serif;
-            font-size: clamp(28px, 6vw, 42px);
-            line-height: 1.1;
-            font-weight: 800;
-            text-align: center;
-            color: #1c1c28;
-            margin-bottom: 12px;
+            font-family: 'Syne', sans-serif; font-size: clamp(28px, 6vw, 42px);
+            line-height: 1.1; font-weight: 800; text-align: center; color: #1c1c28; margin-bottom: 12px;
         }
         .hero-title .highlight { color: #39a084; display: block; }
 
         .hero-desc {
-            font-size: clamp(12px, 3vw, 13px);
-            color: #6c727f;
-            text-align: center;
-            max-width: 400px;
-            line-height: 1.4;
-            margin-bottom: 16px;
-            font-weight: 500;
+            font-size: clamp(12px, 3vw, 13px); color: #6c727f; text-align: center;
+            max-width: 400px; line-height: 1.4; margin-bottom: 16px; font-weight: 500;
         }
 
         .tag-group { display: flex; gap: 8px; margin-bottom: 20px; }
         .info-tag {
-            background: rgba(255, 255, 255, 0.8);
-            border: 1px solid #e1dbc9;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            color: #555;
-            font-weight: 600;
+            background: rgba(255, 255, 255, 0.8); border: 1px solid #e1dbc9;
+            padding: 4px 12px; border-radius: 20px; font-size: 11px; color: #555; font-weight: 600;
         }
 
         .lobby-card {
-            background: #ffffff;
-            border-radius: 16px;
-            width: 100%;
-            max-width: 340px;
-            padding: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.04);
-            border: 1px solid #e8e3d5;
+            background: #ffffff; border-radius: 16px; width: 100%; max-width: 340px;
+            padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.04); border: 1px solid #e8e3d5;
         }
 
-        .tab-group {
-            display: flex;
-            background: #f0ece1;
-            padding: 3px;
-            border-radius: 10px;
-            margin-bottom: 16px;
-        }
+        .tab-group { display: flex; background: #f0ece1; padding: 3px; border-radius: 10px; margin-bottom: 16px; }
         .tab-btn {
-            flex: 1;
-            padding: 8px;
-            border: none;
-            background: transparent;
-            font-size: 12px;
-            font-weight: 700;
-            color: #7a766c;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
+            flex: 1; padding: 8px; border: none; background: transparent;
+            font-size: 12px; font-weight: 700; color: #7a766c; border-radius: 8px; cursor: pointer; transition: all 0.2s;
         }
         .tab-btn.active { background: #ffffff; color: #1a1a2e; }
 
         .form-label { font-size: 11px; font-weight: 700; color: #1a1a2e; margin-bottom: 6px; display: block; }
         .form-input {
-            width: 100%;
-            padding: 10px 12px;
-            background: #f6f3eb;
-            border: 1px solid transparent;
-            border-radius: 10px;
-            outline: none;
-            font-size: 13px;
-            margin-bottom: 12px;
+            width: 100%; padding: 10px 12px; background: #f6f3eb; border: 1px solid transparent;
+            border-radius: 10px; outline: none; font-size: 13px; margin-bottom: 12px;
         }
         .form-input:focus { border-color: #39a084; background: #fff; }
 
         .submit-btn {
-            width: 100%;
-            padding: 12px;
-            background: #39a084;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
+            width: 100%; padding: 12px; background: #39a084; color: white;
+            border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer;
         }
 
         #game-screen { position: relative; width: 100%; height: 100%; overflow: hidden; }
 
         header { 
-            height: 50px; 
-            background: #fff; 
-            border-bottom: 1px solid #ebe6d9; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            padding: 0 16px; 
-            flex-shrink: 0;
-            gap: 8px;
+            height: 50px; background: #fff; border-bottom: 1px solid #ebe6d9; 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 0 16px; flex-shrink: 0; gap: 8px;
         }
         .header-left { display: flex; align-items: center; gap: 10px; }
         .header-right { display: flex; align-items: center; gap: 10px; }
@@ -235,162 +153,75 @@
         .timer-box { font-size: 14px; font-weight: 800; color: #39a084; }
         
         .btn-leave {
-            background: #fee2e2;
-            color: #ef4444;
-            border: 1px solid #fca5a5;
-            padding: 4px 10px;
-            border-radius: 8px;
-            font-size: 11px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background 0.2s;
+            background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5;
+            padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; transition: background 0.2s;
         }
         .btn-leave:hover { background: #fca5a5; color: white; }
 
-        .game-body {
-            display: flex;
-            flex: 1;
-            width: 100%;
-            height: calc(100% - 50px);
-            overflow: hidden;
-        }
+        .game-body { display: flex; flex: 1; width: 100%; height: calc(100% - 50px); overflow: hidden; }
 
         .sidebar { 
-            width: 180px; 
-            background: #fcfbf8; 
-            border-right: 1px solid #ebe6d9; 
-            padding: 10px; 
-            display: flex; 
-            flex-direction: column; 
-            flex-shrink: 0;
+            width: 180px; background: #fcfbf8; border-right: 1px solid #ebe6d9; 
+            padding: 10px; display: flex; flex-direction: column; flex-shrink: 0;
         }
         .sidebar-title { font-size: 11px; font-weight: 800; color: #888275; margin-bottom: 8px; }
         #player-list { flex: 1; overflow-y: auto; }
         
         .player-card { 
-            background: white; 
-            padding: 8px 10px; 
-            border-radius: 8px; 
-            border: 1px solid #e8e3d5; 
-            margin-bottom: 6px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            font-size: 12px; 
-            font-weight: 600;
-            gap: 6px;
+            background: white; padding: 8px 10px; border-radius: 8px; border: 1px solid #e8e3d5; 
+            margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; 
+            font-size: 12px; font-weight: 600; gap: 6px;
         }
         .player-card.drawing { border: 2px solid #f77f5d; background: #fff8f6; }
         
-        .player-info {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            min-width: 0;
-            flex: 1;
-        }
-        
-        .player-name {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+        .player-info { display: flex; align-items: center; gap: 4px; min-width: 0; flex: 1; }
+        .player-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         .host-badge {
-            background: #fff8d6;
-            color: #d97706;
-            border: 1px solid #fef08a;
-            padding: 2px 5px;
-            border-radius: 6px;
-            font-size: 10px;
-            font-weight: 800;
-            white-space: nowrap;
-            flex-shrink: 0;
+            background: #fff8d6; color: #d97706; border: 1px solid #fef08a;
+            padding: 2px 5px; border-radius: 6px; font-size: 10px; font-weight: 800; white-space: nowrap; flex-shrink: 0;
         }
 
-        .player-score {
-            color: #39a084;
-            font-weight: 800;
-            white-space: nowrap;
-            flex-shrink: 0;
-            margin-left: auto;
-        }
+        .player-score { color: #39a084; font-weight: 800; white-space: nowrap; flex-shrink: 0; margin-left: auto; }
 
         #btn-start { height: 38px; background: #39a084; border-radius: 8px; font-size: 13px; margin-top: 6px; }
 
         .canvas-area { 
-            flex: 1; 
-            display: flex; 
-            flex-direction: column; 
-            background: #fff;
-            position: relative;
-            min-height: 0;
+            flex: 1; display: flex; flex-direction: column; 
+            background: #fff; position: relative; min-height: 0;
         }
-        .canvas-wrapper {
-            flex: 1;
-            width: 100%;
-            height: 100%;
-            position: relative;
-            min-height: 0;
-        }
+        .canvas-wrapper { flex: 1; width: 100%; height: 100%; position: relative; min-height: 0; }
         #canvas { 
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; 
-            height: 100%; 
-            background: #fff; 
-            touch-action: none; 
-            cursor: crosshair; 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: #fff; touch-action: none; cursor: crosshair; 
         }
 
+        /* 🎨 툴바 영역 (그리는 사람에게만 표시됨) */
         .toolbar { 
             height: 48px; background: #fcfbf8; border-top: 1px solid #ebe6d9; 
-            display: flex; align-items: center; padding: 0 8px; gap: 4px; flex-shrink: 0;
-            overflow-x: auto;
+            display: flex; align-items: center; padding: 0 8px; gap: 4px; flex-shrink: 0; overflow-x: auto;
         }
+        .toolbar.hidden { display: none !important; }
+
         .tool-btn { 
             height: 32px; padding: 0 8px; background: #fff; border: 1px solid #dcd7c9; 
-            border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; color: #444;
-            white-space: nowrap; flex-shrink: 0;
+            border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; color: #444; white-space: nowrap; flex-shrink: 0;
         }
         .tool-btn.active { background: #39a084; color: white; border-color: #39a084; }
         .color-picker { width: 30px; height: 30px; border: 1px solid #dcd7c9; border-radius: 6px; cursor: pointer; flex-shrink: 0; }
 
         .chat-area { 
-            width: 220px; 
-            border-left: 1px solid #ebe6d9; 
-            background: #fff; 
-            display: flex; 
-            flex-direction: column; 
-            flex-shrink: 0;
-            transition: all 0.2s ease;
+            width: 220px; border-left: 1px solid #ebe6d9; background: #fff; 
+            display: flex; flex-direction: column; flex-shrink: 0; transition: all 0.2s ease;
         }
         .chat-messages { flex: 1; padding: 10px; overflow-y: auto; font-size: 11px; display: flex; flex-direction: column; gap: 6px; }
         .chat-msg { background: #f4f0e6; padding: 6px 8px; border-radius: 6px; word-break: break-all; }
         .chat-msg.system { background: #feeaa1; font-weight: 700; text-align: center; }
         .chat-msg.correct { background: #39a084; color: white; font-weight: 700; text-align: center; }
         
-        /* ✉️ 전송 버튼을 없앤 단일 입력 창 디자인 */
-        .chat-input-box { 
-            height: 48px; 
-            padding: 6px; 
-            border-top: 1px solid #ebe6d9; 
-            display: flex; 
-            background: #fcfbf8; 
-            flex-shrink: 0; 
-        }
-        .chat-input-box input { 
-            width: 100%; 
-            padding: 6px 12px; 
-            border: 1px solid #dcd7c9; 
-            border-radius: 8px; 
-            outline: none; 
-            font-size: 12px; 
-            background: #ffffff;
-        }
-        .chat-input-box input:focus {
-            border-color: #39a084;
-        }
+        .chat-input-box { height: 48px; padding: 6px; border-top: 1px solid #ebe6d9; display: flex; background: #fcfbf8; flex-shrink: 0; }
+        .chat-input-box input { width: 100%; padding: 6px 12px; border: 1px solid #dcd7c9; border-radius: 8px; outline: none; font-size: 12px; background: #ffffff; }
+        .chat-input-box input:focus { border-color: #39a084; }
 
         .correct-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); display: none; justify-content: center; align-items: center; z-index: 100; }
         .correct-overlay.show { display: flex; }
@@ -399,117 +230,47 @@
         /* 📱 모바일 UI 최적화 */
         @media (max-width: 768px) {
             body { padding: 0; }
-            #app { 
-                height: 100vh; 
-                height: 100dvh; 
-                max-height: none; 
-                border-radius: 0; 
-                border: none; 
-            }
+            #app { height: 100vh; height: 100dvh; max-height: none; border-radius: 0; border: none; }
             .game-body { flex-direction: column; }
             
             .sidebar { 
-                width: 100%; 
-                height: 48px; 
-                flex-direction: row; 
-                align-items: center; 
-                justify-content: space-between;
-                border-right: none; 
-                border-bottom: 1px solid #ebe6d9; 
-                padding: 4px 8px; 
-                background: #f8f6f0;
-                z-index: 10;
-                flex-shrink: 0;
+                width: 100%; height: 48px; flex-direction: row; align-items: center; 
+                justify-content: space-between; border-right: none; border-bottom: 1px solid #ebe6d9; 
+                padding: 4px 8px; background: #f8f6f0; z-index: 10; flex-shrink: 0;
             }
             .sidebar-title { display: none; }
 
             #player-list { 
-                display: flex; 
-                flex-direction: row;
-                gap: 6px; 
-                overflow-x: auto; 
-                overflow-y: hidden;
-                flex: 1; 
-                align-items: center; 
-                padding: 2px 4px;
-                min-width: 0;
-                -webkit-overflow-scrolling: touch;
+                display: flex; flex-direction: row; gap: 6px; overflow-x: auto; overflow-y: hidden; 
+                flex: 1; align-items: center; padding: 2px 4px; min-width: 0; -webkit-overflow-scrolling: touch;
             }
 
             #player-list::-webkit-scrollbar { display: none; }
             #player-list { -ms-overflow-style: none; scrollbar-width: none; }
 
             .player-card { 
-                margin-bottom: 0; 
-                white-space: nowrap; 
-                padding: 4px 8px; 
-                height: 36px;
-                min-width: 95px;
-                flex-shrink: 0;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+                margin-bottom: 0; white-space: nowrap; padding: 4px 8px; height: 36px; 
+                min-width: 95px; flex-shrink: 0; display: flex; align-items: center; 
+                justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             }
 
-            .player-info {
-                display: flex;
-                align-items: center;
-                gap: 4px;
-                overflow: hidden;
-            }
-
-            .player-name {
-                font-size: 11px;
-                max-width: 50px;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-            }
-
-            .player-score {
-                font-size: 11px;
-                margin-left: 4px;
-            }
+            .player-info { display: flex; align-items: center; gap: 4px; overflow: hidden; }
+            .player-name { font-size: 11px; max-width: 50px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .player-score { font-size: 11px; margin-left: 4px; }
 
             #btn-start { 
-                width: auto !important; 
-                height: 36px; 
-                margin-top: 0; 
-                font-size: 12px; 
-                padding: 0 12px; 
-                white-space: nowrap;
-                flex-shrink: 0;
-                margin-left: 6px;
+                width: auto !important; height: 36px; margin-top: 0; font-size: 12px; 
+                padding: 0 12px; white-space: nowrap; flex-shrink: 0; margin-left: 6px;
             }
             
-            .canvas-area { 
-                flex: 1; 
-                min-height: 0;
-            }
-            
-            .chat-area { 
-                width: 100%; 
-                height: 120px; 
-                border-left: none; 
-                border-top: 1px solid #ebe6d9; 
-                flex-shrink: 0;
-            }
+            .canvas-area { flex: 1; min-height: 0; }
+            .chat-area { width: 100%; height: 120px; border-left: none; border-top: 1px solid #ebe6d9; flex-shrink: 0; }
 
-            /* ⌨️ 모바일 키보드가 활성화되었을 때 채팅 영역을 최소화하여 그림(캔버스) 영역 확보 */
-            body.keyboard-open .chat-area {
-                height: 42px !important;
-            }
-            body.keyboard-open .chat-messages {
-                display: none; /* 이전 메세지 숨기고 입력창만 표시하여 캔버스 확보 */
-            }
-            body.keyboard-open .chat-input-box {
-                height: 100%;
-                padding: 4px 8px;
-            }
-            body.keyboard-open .sidebar {
-                display: none; /* 키보드 칠 때 플레이어 리스트도 숨겨 캔버스 공간 최대화 */
-            }
+            /* ⌨️ 키보드 활성화 시 캔버스 극대화 */
+            body.keyboard-open .chat-area { height: 42px !important; }
+            body.keyboard-open .chat-messages { display: none; }
+            body.keyboard-open .chat-input-box { height: 100%; padding: 4px 8px; }
+            body.keyboard-open .sidebar { display: none; }
         }
     </style>
 </head>
@@ -580,7 +341,8 @@
                 <div class="canvas-wrapper" id="canvas-wrapper">
                     <canvas id="canvas"></canvas>
                 </div>
-                <div class="toolbar">
+                <!-- 🛠️ 툴바 : 그릴 차례가 아닐 때는 hidden 클래스로 안보이게 처리 -->
+                <div class="toolbar hidden" id="toolbar">
                     <button class="tool-btn active" id="tool-pen">✏️ 펜</button>
                     <button class="tool-btn" id="tool-bucket">🪣 채우기</button>
                     <input type="color" id="color-picker" class="color-picker" value="#000000">
@@ -635,6 +397,7 @@
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     
+    const toolbar = document.getElementById('toolbar');
     const toolPen = document.getElementById('tool-pen');
     const toolBucket = document.getElementById('tool-bucket');
     const colorPicker = document.getElementById('color-picker');
@@ -652,14 +415,14 @@
     let myNickname = '';
     let isMyTurn = false;
     let isDrawing = false;
+    let isGameStarted = false; // 🎮 게임 진행 여부 플래그
+    let isHostUser = false;    // 👑 방장 여부 플래그
     let currentTool = 'pen';
     let canvasHistory = [];
     let historyStep = -1;
 
-    // 🎬 화면 전환 슬라이드 애니메이션 함수
     function switchScreen(fromScreen, toScreen, direction = 'right') {
         fromScreen.classList.remove('active', 'slide-in-right', 'slide-in-left');
-        
         toScreen.classList.add('active');
         const animClass = direction === 'right' ? 'slide-in-right' : 'slide-in-left';
         toScreen.classList.add(animClass);
@@ -713,6 +476,8 @@
             chatMessages.innerHTML = '';
             displayWord.innerText = '대기 중...';
             isMyTurn = false;
+            isGameStarted = false;
+            toolbar.classList.add('hidden');
         }
     });
 
@@ -831,7 +596,12 @@
     socket.on('joinSuccess', ({ roomCode, isHost }) => {
         switchScreen(lobbyScreen, gameScreen, 'right');
         displayRoomCode.innerText = roomCode;
-        if (isHost) btnStart.style.display = 'block';
+        isHostUser = isHost;
+        isGameStarted = false;
+        
+        // 대기 중에는 게임 시작 버튼 표시 (방장만)
+        btnStart.style.display = isHostUser ? 'block' : 'none';
+        
         setTimeout(() => {
             resizeCanvas();
             saveCanvasState();
@@ -931,7 +701,6 @@
         socket.emit('clearCanvas');
     });
 
-    // 💬 채팅/정답 즉시 전송 함수
     function sendMessage() {
         const msg = chatInput.value.trim();
         if (msg) {
@@ -940,7 +709,6 @@
         }
     }
 
-    // 모바일/PC 엔터 키 감지 (완료/전송 버튼 대응)
     chatInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.keyCode === 13) {
             e.preventDefault();
@@ -948,7 +716,6 @@
         }
     });
 
-    // 📱 모바일 키보드 상태 감지 및 화면 자동 조절
     if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', () => {
             const currentHeight = window.visualViewport.height;
@@ -957,12 +724,12 @@
             } else {
                 document.body.classList.remove('keyboard-open');
             }
-            // 키보드가 나타나거나 사라질 때 캔버스 영역 재계산
             setTimeout(resizeCanvas, 50);
         });
     }
 
     socket.on('updatePlayers', ({ players, hostId }) => {
+        isHostUser = (socket.id === hostId);
         playerList.innerHTML = '';
         players.forEach(p => {
             const card = document.createElement('div');
@@ -978,17 +745,35 @@
             `;
             playerList.appendChild(card);
         });
-        btnStart.style.display = (socket.id === hostId) ? 'block' : 'none';
+
+        // 🎮 게임이 시작되지 않은 대기 상태일 때만 방장에게 시작 버튼 표시
+        if (!isGameStarted) {
+            btnStart.style.display = isHostUser ? 'block' : 'none';
+        } else {
+            btnStart.style.display = 'none';
+        }
     });
 
     socket.on('turnStart', ({ drawerId, hintMask }) => {
+        isGameStarted = true;
+        btnStart.style.display = 'none'; // 🚫 게임 진행 중에는 시작 버튼 무조건 제거
+        
         isDrawing = false;
         isMyTurn = (socket.id === drawerId);
+        
+        // 🛠️ 그리는 사람에게만 툴바를 노출, 맞히는 사람은 툴바 제거하여 캔버스 공간 최대 확보
+        if (isMyTurn) {
+            toolbar.classList.remove('hidden');
+        } else {
+            toolbar.classList.add('hidden');
+        }
+
         displayWord.innerText = isMyTurn ? '단어 확인 중...' : hintMask;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         canvasHistory = [];
         historyStep = -1;
         saveCanvasState();
+        setTimeout(resizeCanvas, 50);
     });
 
     socket.on('yourWord', (word) => { displayWord.innerText = `제시어: ${word}`; });
