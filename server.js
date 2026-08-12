@@ -79,6 +79,34 @@ function handleLeaveRoom(socket) {
                 delete rooms[roomCode];
             } else {
                 if (room.hostId === socket.id) room.hostId = room.players[0].id;
+
+                // 🌟 [추가된 핵심 로직] 게임 진행 중 인원이 1명 이하가 되면 대기 상태로 전환
+                if (room.isPlaying && room.players.length <= 1) {
+                    if (room.timer) {
+                        clearInterval(room.timer);
+                        room.timer = null;
+                    }
+                    
+                    room.isPlaying = false;
+                    room.drawerId = null;
+                    room.currentWord = '';
+                    room.isRoundOver = false;
+
+                    // 플레이어 그리너(isDrawing) 상태 해제
+                    room.players.forEach(p => p.isDrawing = false);
+
+                    // 중단 메시지 전송
+                    io.to(roomCode).emit('chatMessage', { 
+                        system: true, 
+                        text: '⚠️ 인원이 부족하여 게임이 중단되었습니다. (최소 2명 필요)' 
+                    });
+
+                    // 화면 상태 및 타이머 초기화 알림
+                    io.to(roomCode).emit('turnStart', { drawerId: null, hintMask: '대기 중...' });
+                    io.to(roomCode).emit('clearCanvas');
+                    io.to(roomCode).emit('timerUpdate', 0);
+                }
+
                 io.to(roomCode).emit('updatePlayers', { players: room.players, hostId: room.hostId });
             }
         }
@@ -141,7 +169,8 @@ io.on('connection', (socket) => {
 
     function startNextTurn(roomCode) {
         const room = rooms[roomCode];
-        if (!room || room.players.length === 0) return;
+        // 🌟 진행 중이 아니거나 인원이 부족하면 턴을 시작하지 않음
+        if (!room || !room.isPlaying || room.players.length < 2) return;
 
         room.isRoundOver = false;
         room.drawerIndex = (room.drawerIndex + 1) % room.players.length;
@@ -168,7 +197,11 @@ io.on('connection', (socket) => {
                 clearInterval(room.timer);
                 room.isRoundOver = true;
                 io.to(roomCode).emit('chatMessage', { system: true, text: `시간 종료! 정답은 [ ${room.currentWord} ] 이었습니다.` });
-                setTimeout(() => startNextTurn(roomCode), 3000);
+                
+                // 3초 후 다음 턴으로 넘어가기 전 인원 체크
+                setTimeout(() => {
+                    if (room.isPlaying) startNextTurn(roomCode);
+                }, 3000);
             }
         }, 1000);
     }
@@ -208,7 +241,10 @@ io.on('connection', (socket) => {
                 io.to(roomCode).emit('correctAnswer', { winnerNick: player.nickname, word: room.currentWord });
                 io.to(roomCode).emit('updatePlayers', { players: room.players, hostId: room.hostId });
 
-                setTimeout(() => startNextTurn(roomCode), 2500);
+                // 정답 맞춘 후 2.5초 뒤 인원 체크
+                setTimeout(() => {
+                    if (room.isPlaying) startNextTurn(roomCode);
+                }, 2500);
                 return;
             }
         }
