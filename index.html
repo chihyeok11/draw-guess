@@ -210,24 +210,30 @@
         .tool-btn.active { background: #39a084; color: white; border-color: #39a084; }
         .color-picker { width: 30px; height: 30px; border: 1px solid #dcd7c9; border-radius: 6px; cursor: pointer; flex-shrink: 0; }
 
-        /* 💬 채팅 영역 (기존 220px -> 320px로 확장) */
-        .chat-area { 
-            width: 320px; border-left: 1px solid #ebe6d9; background: #fff; 
-            display: flex; flex-direction: column; flex-shrink: 0; transition: all 0.2s ease;
-        }
-        .chat-messages { flex: 1; padding: 10px; overflow-y: auto; font-size: 12px; display: flex; flex-direction: column; gap: 6px; }
-        .chat-msg { background: #f4f0e6; padding: 6px 8px; border-radius: 6px; word-break: break-all; }
-        .chat-msg.system { background: #feeaa1; font-weight: 700; text-align: center; }
-        .chat-msg.correct { background: #39a084; color: white; font-weight: 700; text-align: center; }
-        
-        .chat-input-box { height: 48px; padding: 6px; border-top: 1px solid #ebe6d9; display: flex; background: #fcfbf8; flex-shrink: 0; }
-        .chat-input-box input { width: 100%; padding: 6px 12px; border: 1px solid #dcd7c9; border-radius: 8px; outline: none; font-size: 12px; background: #ffffff; }
-        .chat-input-box input:focus { border-color: #39a084; }
+        /* 💬 채팅 영역 */
+.chat-area { 
+    width: 320px; 
+    height: 100%; /* 높이 명시적 지정 */
+    border-left: 1px solid #ebe6d9; 
+    background: #fff; 
+    display: flex; 
+    flex-direction: column; 
+    flex-shrink: 0; 
+    transition: all 0.2s ease;
+    overflow: hidden; /* 영역 이탈 방지 */
+}
 
-        .correct-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); display: none; justify-content: center; align-items: center; z-index: 100; }
-        .correct-overlay.show { display: flex; }
-        .correct-banner { background: white; padding: 20px 30px; border-radius: 16px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-
+.chat-messages { 
+    flex: 1; 
+    min-height: 0; /* Flex 자식 요소가 오버플로우될 때 축소 가능하도록 지정 (핵심!) */
+    padding: 12px; 
+    overflow-y: auto; 
+    font-size: 12px; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 6px; 
+    background: #fdfcf9; /* 메시지 입력창과 영역을 구분하기 위해 옅은 배경색 추가 */
+}
         /* 📱 모바일 UI 최적화 */
         @media (max-width: 768px) {
             body { padding: 0; }
