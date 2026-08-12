@@ -348,42 +348,86 @@
                 border-radius: 0; 
                 border: none; 
             }
-            .game-body { flex-direction: column; }
+            .game-body { 
+                flex-direction: column; 
+            }
             
-            /* 상단 플레이어 슬라이드 바 */
+            /* 상단 플레이어 슬라이드 바 보정 */
             .sidebar { 
                 width: 100%; 
-                height: 48px; 
+                height: 56px; 
                 flex-direction: row; 
                 align-items: center; 
                 border-right: none; 
                 border-bottom: 1px solid #ebe6d9; 
                 padding: 4px 8px; 
-                overflow-x: auto;
+                background: #f8f6f0;
+                z-index: 10;
+                flex-shrink: 0; /* 높이 줄어듦 방지 */
             }
             .sidebar-title { display: none; }
+
             #player-list { 
                 display: flex; 
+                flex-direction: row;
                 gap: 6px; 
                 overflow-x: auto; 
+                overflow-y: hidden;
                 flex: 1; 
                 align-items: center; 
-                padding-right: 4px;
+                padding: 2px 4px;
+                -webkit-overflow-scrolling: touch;
             }
+
+            /* 가로 스크롤바 숨김 처리 (깔끔한 UI) */
+            #player-list::-webkit-scrollbar {
+                display: none;
+            }
+            #player-list {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+
+            /* 플레이어 카드 모바일 크기 보정 */
             .player-card { 
                 margin-bottom: 0; 
                 white-space: nowrap; 
                 padding: 4px 8px; 
-                height: 36px;
-                min-width: 100px;
+                height: 40px;
+                min-width: 110px;
                 flex-shrink: 0;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             }
+
+            .player-info {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                overflow: hidden;
+            }
+
+            .player-name {
+                font-size: 11px;
+                max-width: 50px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .player-score {
+                font-size: 11px;
+                margin-left: 4px;
+            }
+
             #btn-start { 
-                height: 34px; 
+                height: 38px; 
                 margin-top: 0; 
                 font-size: 11px; 
                 margin-left: 6px; 
-                padding: 0 10px; 
+                padding: 0 12px; 
                 white-space: nowrap;
                 flex-shrink: 0;
             }
@@ -394,10 +438,10 @@
                 min-height: 0;
             }
             
-            /* 하단 채팅 영역 높이 제한 및 터짐 방지 */
+            /* 하단 채팅 영역 */
             .chat-area { 
                 width: 100%; 
-                height: 140px; 
+                height: 130px; 
                 border-left: none; 
                 border-top: 1px solid #ebe6d9; 
                 flex-shrink: 0;
