@@ -52,8 +52,47 @@
             flex-direction: column;
         }
 
-        .screen { display: none; width: 100%; height: 100%; }
-        .screen.active { display: flex; flex-direction: column; }
+        .screen { 
+            display: none; 
+            width: 100%; 
+            height: 100%; 
+            will-change: transform, opacity;
+        }
+        .screen.active { 
+            display: flex; 
+            flex-direction: column; 
+        }
+
+        /* 🎬 슬라이드 애니메이션 효과 */
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .screen.slide-in-right {
+            animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .screen.slide-in-left {
+            animation: slideInLeft 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
 
         #lobby-screen { 
             background-color: #f8f6f0;
@@ -337,7 +376,7 @@
 
         .correct-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); display: none; justify-content: center; align-items: center; z-index: 100; }
         .correct-overlay.show { display: flex; }
-        .correct-banner { background: white; padding: 20px 30px; border-radius: 16px; text-align: center; }
+        .correct-banner { background: white; padding: 20px 30px; border-radius: 16px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
 
         /* 모바일 UI 보정 */
         @media (max-width: 768px) {
@@ -439,7 +478,6 @@
                 flex-shrink: 0;
             }
 
-            /* 모바일 키보드 열렸을 때 대응 */
             body.keyboard-open .chat-area {
                 height: 90px !important;
             }
@@ -539,7 +577,7 @@
 
         <div class="correct-overlay" id="correct-overlay">
             <div class="correct-banner">
-                <h2 style="color:#39a084; margin-bottom:6px; font-size: 20px;">🎉 정답입니다!</h2>
+                <h2 id="correct-title" style="color:#39a084; margin-bottom:6px; font-size: 20px;">🎉 정답입니다!</h2>
                 <p id="correct-text" style="font-size: 13px; color:#555;"></p>
                 <div id="correct-word" style="color:#f77f5d; font-weight:800; margin-top:6px; font-size: 16px;"></div>
             </div>
@@ -581,7 +619,9 @@
     const btnUndo = document.getElementById('btn-undo');
     const btnRedo = document.getElementById('btn-redo');
     const btnClear = document.getElementById('btn-clear');
+    
     const correctOverlay = document.getElementById('correct-overlay');
+    const correctTitle = document.getElementById('correct-title');
     const correctText = document.getElementById('correct-text');
     const correctWord = document.getElementById('correct-word');
 
@@ -592,6 +632,19 @@
     let currentTool = 'pen';
     let canvasHistory = [];
     let historyStep = -1;
+
+    // 🎬 화면 전환 슬라이드 애니메이션 함수
+    function switchScreen(fromScreen, toScreen, direction = 'right') {
+        fromScreen.classList.remove('active', 'slide-in-right', 'slide-in-left');
+        
+        toScreen.classList.add('active');
+        const animClass = direction === 'right' ? 'slide-in-right' : 'slide-in-left';
+        toScreen.classList.add(animClass);
+
+        setTimeout(() => {
+            toScreen.classList.remove(animClass);
+        }, 350);
+    }
 
     function resizeCanvas() {
         if (!canvasWrapper || canvasWrapper.clientWidth === 0) return;
@@ -633,8 +686,7 @@
     btnLeave.addEventListener('click', () => {
         if (confirm('방에서 나가시겠습니까?')) {
             socket.emit('leaveRoom');
-            gameScreen.classList.remove('active');
-            lobbyScreen.classList.add('active');
+            switchScreen(gameScreen, lobbyScreen, 'left');
             chatMessages.innerHTML = '';
             displayWord.innerText = '대기 중...';
             isMyTurn = false;
@@ -754,8 +806,7 @@
     btnStart.addEventListener('click', () => { socket.emit('startGame'); });
 
     socket.on('joinSuccess', ({ roomCode, isHost }) => {
-        lobbyScreen.classList.remove('active');
-        gameScreen.classList.add('active');
+        switchScreen(lobbyScreen, gameScreen, 'right');
         displayRoomCode.innerText = roomCode;
         if (isHost) btnStart.style.display = 'block';
         setTimeout(() => {
@@ -934,11 +985,11 @@
 
         if (data.type === 'start') {
             ctx.beginPath();
+            ctx.moveTo(px, py);
             ctx.strokeStyle = data.color;
             ctx.lineWidth = data.lineWidth;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
-            ctx.moveTo(px, py);
         } else if (data.type === 'move') {
             ctx.lineTo(px, py);
             ctx.stroke();
@@ -960,6 +1011,23 @@
         saveCanvasState();
     });
 
+    socket.on('correctAnswer', ({ winnerNick, word, score }) => {
+        correctTitle.innerText = `🎉 정답입니다! (+${score}점)`;
+        correctText.innerText = `${winnerNick}님이 정답을 맞추셨습니다!`;
+        correctWord.innerText = `정답: [ ${word} ]`;
+        correctOverlay.classList.add('show');
+
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'chat-msg correct';
+        msgDiv.innerText = `🎯 ${winnerNick}님이 정답 [${word}]을(를) 맞추셨습니다! (+${score}pt)`;
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        setTimeout(() => {
+            correctOverlay.classList.remove('show');
+        }, 2200);
+    });
+
     socket.on('chatMessage', (data) => {
         const msgDiv = document.createElement('div');
         if (data.system) {
@@ -971,13 +1039,6 @@
         }
         chatMessages.appendChild(msgDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
-    });
-
-    socket.on('correctAnswer', ({ winnerNick, word }) => {
-        correctText.innerText = `${winnerNick}님이 정답을 맞추셨습니다! (+100점)`;
-        correctWord.innerText = `정답: [ ${word} ]`;
-        correctOverlay.classList.add('show');
-        setTimeout(() => { correctOverlay.classList.remove('show'); }, 2500);
     });
 
     socket.on('errorMessage', (msg) => { alert(msg); });
