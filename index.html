@@ -338,7 +338,7 @@
         .correct-overlay.show { display: flex; }
         .correct-banner { background: white; padding: 20px 30px; border-radius: 16px; text-align: center; }
 
-        /* 모바일 전용 UI 완벽 대응 */
+      /* 모바일 전용 UI 완벽 대응 (버튼 찌그러짐 및 플레이어 목록 가림 수정) */
         @media (max-width: 768px) {
             body { padding: 0; }
             #app { 
@@ -352,49 +352,47 @@
                 flex-direction: column; 
             }
             
-            /* 상단 플레이어 슬라이드 바 보정 */
+            /* 상단 플레이어 목록 및 시작 버튼 레이아웃 */
             .sidebar { 
                 width: 100%; 
-                height: 56px; 
+                height: 52px; 
                 flex-direction: row; 
                 align-items: center; 
+                justify-content: space-between;
                 border-right: none; 
                 border-bottom: 1px solid #ebe6d9; 
                 padding: 4px 8px; 
                 background: #f8f6f0;
                 z-index: 10;
-                flex-shrink: 0; /* 높이 줄어듦 방지 */
+                flex-shrink: 0;
             }
             .sidebar-title { display: none; }
 
+            /* 플레이어 목록 스크롤 영역 */
             #player-list { 
                 display: flex; 
                 flex-direction: row;
                 gap: 6px; 
                 overflow-x: auto; 
                 overflow-y: hidden;
-                flex: 1; 
+                flex: 1; /* 남은 공간 슬라이드 영역으로 채움 */
                 align-items: center; 
                 padding: 2px 4px;
+                min-width: 0; /* flex 자식 요소 삐져나침 방지 */
                 -webkit-overflow-scrolling: touch;
             }
 
-            /* 가로 스크롤바 숨김 처리 (깔끔한 UI) */
-            #player-list::-webkit-scrollbar {
-                display: none;
-            }
-            #player-list {
-                -ms-overflow-style: none;
-                scrollbar-width: none;
-            }
+            /* 가로 스크롤바 숨김 */
+            #player-list::-webkit-scrollbar { display: none; }
+            #player-list { -ms-overflow-style: none; scrollbar-width: none; }
 
-            /* 플레이어 카드 모바일 크기 보정 */
+            /* 플레이어 카드 세부 스타일 */
             .player-card { 
                 margin-bottom: 0; 
                 white-space: nowrap; 
                 padding: 4px 8px; 
-                height: 40px;
-                min-width: 110px;
+                height: 38px;
+                min-width: 100px;
                 flex-shrink: 0;
                 display: flex;
                 align-items: center;
@@ -411,7 +409,7 @@
 
             .player-name {
                 font-size: 11px;
-                max-width: 50px;
+                max-width: 55px;
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
@@ -422,14 +420,16 @@
                 margin-left: 4px;
             }
 
+            /* 게임 시작 버튼 크기 제한 (화면 전체 차지 방지) */
             #btn-start { 
+                width: auto !important; /* width: 100% 강제 해제 */
                 height: 38px; 
                 margin-top: 0; 
-                font-size: 11px; 
-                margin-left: 6px; 
-                padding: 0 12px; 
+                font-size: 12px; 
+                padding: 0 14px; 
                 white-space: nowrap;
-                flex-shrink: 0;
+                flex-shrink: 0; /* 버튼 크기 고정 */
+                margin-left: 8px;
             }
             
             /* 캔버스 영역 */
@@ -456,7 +456,7 @@
     <div id="lobby-screen" class="screen active">
         <div class="brand-header">
             <div class="brand-icon">✏️</div>
-            <span>draw.guess</span>
+            <span>draw & guess</span>
         </div>
 
         <h1 class="hero-title">
