@@ -21,6 +21,7 @@
             min-height: 100vh; 
             color: #1a1a2e;
             padding: 10px;
+            touch-action: manipulation;
         }
 
         #app { 
@@ -214,7 +215,6 @@
         .sidebar-title { font-size: 11px; font-weight: 800; color: #888275; margin-bottom: 8px; }
         #player-list { flex: 1; overflow-y: auto; }
         
-        /* UI 깨짐 해결 스타일 수정 */
         .player-card { 
             background: white; 
             padding: 8px 10px; 
@@ -411,7 +411,7 @@
                     <button class="tool-btn active" id="tool-pen">✏️ 펜</button>
                     <button class="tool-btn" id="tool-bucket">🪣 채우기</button>
                     <input type="color" id="color-picker" class="color-picker" value="#000000">
-                    <input type="range" id="line-width" min="2" max="30" value="4" style="width:50px;">
+                    <input type="range" id="line-width" min="3" max="40" value="8" style="width:50px;">
                     <button class="tool-btn" id="btn-undo">↩️</button>
                     <button class="tool-btn" id="btn-redo">↪️</button>
                     <button class="tool-btn" id="btn-clear" style="color:#f77f5d;">지우기</button>
@@ -483,12 +483,25 @@
     let canvasHistory = [];
     let historyStep = -1;
 
+    // 모바일/고해상도 캔버스 선명도 개선 함수
     function resizeCanvas() {
         if (!canvasWrapper || canvasWrapper.clientWidth === 0) return;
-        const tempImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        canvas.width = canvasWrapper.clientWidth;
-        canvas.height = canvasWrapper.clientHeight;
-        ctx.putImageData(tempImage, 0, 0);
+        
+        const rect = canvasWrapper.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+
+        let tempImage = null;
+        if (canvas.width > 0 && canvas.height > 0) {
+            tempImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        }
+
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+
+        if (tempImage) {
+            ctx.putImageData(tempImage, 0, 0);
+        }
     }
     window.addEventListener('resize', resizeCanvas);
 
@@ -653,13 +666,15 @@
         saveCanvasState();
     });
 
+    // 좌표계 계산 보정
     function getPos(e) {
         const rect = canvas.getBoundingClientRect();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
         return {
-            x: Math.floor((clientX - rect.left) * (canvas.width / rect.width)),
-            y: Math.floor((clientY - rect.top) * (canvas.height / rect.height))
+            x: (clientX - rect.left) * (canvas.width / rect.width),
+            y: (clientY - rect.top) * (canvas.height / rect.height)
         };
     }
 
@@ -668,9 +683,9 @@
         const pos = getPos(e);
 
         if (currentTool === 'bucket') {
-            floodFill(pos.x, pos.y, colorPicker.value);
+            floodFill(Math.floor(pos.x), Math.floor(pos.y), colorPicker.value);
             saveCanvasState();
-            socket.emit('draw', { type: 'bucket', x: pos.x, y: pos.y, color: colorPicker.value });
+            socket.emit('draw', { type: 'bucket', x: Math.floor(pos.x), y: Math.floor(pos.y), color: colorPicker.value });
         } else {
             isDrawing = true;
             ctx.beginPath();
@@ -691,6 +706,7 @@
         ctx.strokeStyle = colorPicker.value;
         ctx.lineWidth = lineWidthInput.value;
         ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
         ctx.lineTo(pos.x, pos.y);
         ctx.stroke();
 
@@ -743,7 +759,6 @@
     btnSend.addEventListener('click', sendMessage);
     chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
 
-    // 수정된 플레이어 리스트 렌더링 부분
     socket.on('updatePlayers', ({ players, hostId }) => {
         playerList.innerHTML = '';
         players.forEach(p => {
@@ -781,6 +796,7 @@
             ctx.strokeStyle = data.color;
             ctx.lineWidth = data.lineWidth;
             ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
             ctx.moveTo(data.x, data.y);
         } else if (data.type === 'move') {
             ctx.lineTo(data.x, data.y);
