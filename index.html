@@ -10,7 +10,19 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
     
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            overscroll-behavior: none; /* 모바일 바운스/스크롤 방지 */
+        }
 
         body { 
             background-color: #f7f4ed; 
@@ -19,7 +31,6 @@
             display: flex; 
             justify-content: center; 
             align-items: center; 
-            min-height: 100vh; 
             color: #1a1a2e;
             padding: 10px;
             touch-action: manipulation;
@@ -29,6 +40,7 @@
             width: 100%;
             max-width: 1000px; 
             height: 90vh;
+            height: 90dvh;
             max-height: 720px;
             background: #ffffff; 
             border-radius: 20px; 
@@ -163,7 +175,7 @@
             cursor: pointer;
         }
 
-        #game-screen { position: relative; width: 100%; height: 100%; }
+        #game-screen { position: relative; width: 100%; height: 100%; overflow: hidden; }
 
         header { 
             height: 50px; 
@@ -273,12 +285,14 @@
             flex-direction: column; 
             background: #fff;
             position: relative;
+            min-height: 0; /* 모바일 자름 방지 필수 */
         }
         .canvas-wrapper {
             flex: 1;
             width: 100%;
             height: 100%;
             position: relative;
+            min-height: 0;
         }
         #canvas { 
             position: absolute;
@@ -324,16 +338,22 @@
         .correct-overlay.show { display: flex; }
         .correct-banner { background: white; padding: 20px 30px; border-radius: 16px; text-align: center; }
 
-        /* 모바일 전용 UI 보정 */
+        /* 모바일 전용 UI 완벽 대응 */
         @media (max-width: 768px) {
             body { padding: 0; }
-            #app { height: 100vh; max-height: 100vh; border-radius: 0; border: none; }
+            #app { 
+                height: 100vh; 
+                height: 100dvh; 
+                max-height: none; 
+                border-radius: 0; 
+                border: none; 
+            }
             .game-body { flex-direction: column; }
             
-            /* 플레이어 목록을 상단 슬라이드 패널 형태로 변경 */
+            /* 상단 플레이어 슬라이드 바 */
             .sidebar { 
                 width: 100%; 
-                height: 52px; 
+                height: 48px; 
                 flex-direction: row; 
                 align-items: center; 
                 border-right: none; 
@@ -354,21 +374,34 @@
                 margin-bottom: 0; 
                 white-space: nowrap; 
                 padding: 4px 8px; 
-                height: 38px;
-                min-width: 110px;
+                height: 36px;
+                min-width: 100px;
                 flex-shrink: 0;
             }
             #btn-start { 
-                height: 36px; 
+                height: 34px; 
                 margin-top: 0; 
                 font-size: 11px; 
                 margin-left: 6px; 
-                padding: 0 12px; 
+                padding: 0 10px; 
                 white-space: nowrap;
                 flex-shrink: 0;
             }
-            .canvas-area { flex: 1; }
-            .chat-area { width: 100%; height: 130px; border-left: none; border-top: 1px solid #ebe6d9; }
+            
+            /* 캔버스 영역 */
+            .canvas-area { 
+                flex: 1; 
+                min-height: 0;
+            }
+            
+            /* 하단 채팅 영역 높이 제한 및 터짐 방지 */
+            .chat-area { 
+                width: 100%; 
+                height: 140px; 
+                border-left: none; 
+                border-top: 1px solid #ebe6d9; 
+                flex-shrink: 0;
+            }
         }
     </style>
 </head>
