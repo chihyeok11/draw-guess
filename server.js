@@ -7,12 +7,42 @@ const PORT = process.env.PORT || 10000;
 
 app.use(express.static(__dirname));
 
-// 데이터 구조 정의
-const rooms = {};      // 방 정보 저장
-const userRooms = {};  // socket.id -> roomCode 매핑
+const rooms = {};
+const userRooms = {};
 
-// 제시어 목록
-const WORDS = ['사과', '바나나', '호랑이', '비행기', '자동차', '컴퓨터', '스마트폰', '피자', '축구', '자전거', '선글라스', '아이스크림', '시계', '냉장고'];
+// 200개 이상의 방대한 제시어 목록
+const WORDS = [
+    // 동물 & 식물
+    '호랑이', '사자', '기린', '코끼리', '얼룩말', '펭귄', '돌고래', '상어', '문어', '오징어',
+    '다람쥐', '토끼', '강아지', '고양이', '햄스터', '판다', '캥거루', '독수리', '올빼미', '비둘기',
+    '카멜레온', '공룡', '플라밍고', '선인장', '해바라기', '장미', '단풍잎', '대나무', '버섯', '바오밥나무',
+    
+    // 음식 & 디저트
+    '사과', '바나나', '포도', '수박', '딸기', '파인애플', '복숭아', '아보카도', '체리', '망고',
+    '피자', '햄버거', '치킨', '떡볶이', '라면', '초밥', '파스타', '스테이크', '자장면', '탕수육',
+    '아이스크림', '도넛', '마카롱', '케이크', '붕어빵', '감자튀김', '핫도그', '팝콘', '샌드위치', '계란후라이',
+    
+    // 사물 & 가전제품
+    '컴퓨터', '스마트폰', '노트북', '헤드폰', '마우스', '키보드', 'televison', '냉장고', '세탁기', '선풍기',
+    '에어컨', '청소기', '전자레인지', '드라이기', '시계', '거울', '우산', '안경', '선글라스', '지갑',
+    '열쇠', '가방', '모자', '신발', '양말', '장갑', '지우개', '연필', '가위', '자물쇠',
+    
+    // 교통수단 & 시설
+    '자동차', '비행기', '헬리콥터', '기차', '지하철', '자전거', '킥보드', '오토바이', '버릇', '택시',
+    '소방차', '경찰차', '구급차', '포크레인', '잠수함', '열기구', '우주선', '요트', '트럭', '케이블카',
+    
+    // 장소 & 자연
+    '학교', '병원', '경찰서', '소방서', '은행', '도서관', '공항', '놀이공원', '영화관', '수영장',
+    '태양', '달', '지구', '무지개', '번개', '화산', '폭포', '바다', '빙산', '사막',
+    
+    // 직업 & 인물
+    '의사', '경찰관', '소방관', '요리사', '화가', '가수', '우주비행사', '마술사', '탐정', '해적',
+    '공주', '왕자', '로봇', '외계인', '유령', '산타클로스', '닌자', '상인', '농부', '판사',
+    
+    // 스포츠 & 취미
+    '축구', '농구', '야구', '테니스', '골프', '볼링', '수영', '스케이트보드', '태권도', '양궁',
+    '피아노', '기타', '드럼', '바이올린', '체스', '낚시', '캠핑', '등산', '사진', '스노클링'
+];
 
 function getRandomWord() {
     return WORDS[Math.floor(Math.random() * WORDS.length)];
@@ -38,7 +68,7 @@ function handleLeaveRoom(socket) {
                 if (room.timer) clearInterval(room.timer);
                 delete rooms[roomCode];
             } else {
-                if (room.hostId === socket.id) room.hostId = room.players[0].id; // 방장 자동 위임
+                if (room.hostId === socket.id) room.hostId = room.players[0].id;
                 io.to(roomCode).emit('updatePlayers', { players: room.players, hostId: room.hostId });
             }
         }
@@ -47,7 +77,6 @@ function handleLeaveRoom(socket) {
 }
 
 io.on('connection', (socket) => {
-    // 1. 방 만들기
     socket.on('createRoom', ({ userNick }) => {
         const roomCode = generateRoomCode();
         rooms[roomCode] = {
@@ -67,7 +96,6 @@ io.on('connection', (socket) => {
         io.to(roomCode).emit('chatMessage', { system: true, text: `${userNick}님이 방을 생성했습니다.` });
     });
 
-    // 2. 방 참가하기
     socket.on('joinRoom', ({ roomCode, userNick }) => {
         const code = roomCode.toUpperCase();
         const room = rooms[code];
@@ -84,7 +112,6 @@ io.on('connection', (socket) => {
         io.to(code).emit('chatMessage', { system: true, text: `${userNick}님이 입장했습니다.` });
     });
 
-    // 3. 게임 시작
     socket.on('startGame', () => {
         const roomCode = userRooms[socket.id];
         const room = rooms[roomCode];
@@ -111,7 +138,8 @@ io.on('connection', (socket) => {
         room.players.forEach(p => p.isDrawing = (p.id === drawer.id));
         io.to(roomCode).emit('updatePlayers', { players: room.players, hostId: room.hostId });
 
-        const maskWord = '? '.repeat(room.currentWord.length).trim();
+        // 글자 수만큼 _ (밑줄)로 표시 (예: 3글자 -> _ _ _)
+        const maskWord = '_ '.repeat(room.currentWord.length).trim();
         io.to(roomCode).emit('turnStart', { drawerId: drawer.id, hintMask: `제시어: ${maskWord}` });
         io.to(drawer.id).emit('yourWord', room.currentWord);
 
@@ -131,7 +159,6 @@ io.on('connection', (socket) => {
         }, 1000);
     }
 
-    // 4. 그림 그리기 연동
     socket.on('draw', (data) => {
         const roomCode = userRooms[socket.id];
         if (roomCode) socket.to(roomCode).emit('draw', data);
@@ -147,7 +174,6 @@ io.on('connection', (socket) => {
         if (roomCode) io.to(roomCode).emit('clearCanvas');
     });
 
-    // 5. 채팅 및 정답 판정
     socket.on('sendMessage', (msg) => {
         const roomCode = userRooms[socket.id];
         const room = rooms[roomCode];
@@ -174,7 +200,6 @@ io.on('connection', (socket) => {
         io.to(roomCode).emit('chatMessage', { nickname: player.nickname, text: msg, system: false });
     });
 
-    // 6. 방 나가기 및 퇴장 처리
     socket.on('leaveRoom', () => {
         handleLeaveRoom(socket);
     });
