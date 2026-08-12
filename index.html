@@ -179,7 +179,7 @@
         .header-right { display: flex; align-items: center; gap: 10px; }
         .room-info { font-weight: 700; font-size: 13px; color: #555; }
         .room-info span { color: #39a084; font-weight: 800; }
-        .word-box { font-size: 16px; font-weight: 800; color: #f77f5d; background: #fff1ed; padding: 4px 16px; border-radius: 16px; letter-spacing: 2px; }
+        .word-box { font-size: 15px; font-weight: 800; color: #f77f5d; background: #fff1ed; padding: 4px 12px; border-radius: 16px; letter-spacing: 1px; }
         .timer-box { font-size: 14px; font-weight: 800; color: #39a084; }
         
         .btn-leave {
@@ -242,7 +242,6 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            word-break: keep-all;
         }
 
         .host-badge {
@@ -262,6 +261,7 @@
             font-weight: 800;
             white-space: nowrap;
             flex-shrink: 0;
+            margin-left: auto;
         }
 
         #btn-start { height: 38px; background: #39a084; border-radius: 8px; font-size: 13px; margin-top: 6px; }
@@ -323,20 +323,51 @@
         .correct-overlay.show { display: flex; }
         .correct-banner { background: white; padding: 20px 30px; border-radius: 16px; text-align: center; }
 
+        /* 모바일 전용 UI 보정 */
         @media (max-width: 768px) {
             body { padding: 0; }
             #app { height: 100vh; max-height: 100vh; border-radius: 0; border: none; }
             .game-body { flex-direction: column; }
+            
+            /* 플레이어 목록을 상단 슬라이드 패널 형태로 변경 */
             .sidebar { 
-                width: 100%; height: 45px; flex-direction: row; align-items: center; 
-                border-right: none; border-bottom: 1px solid #ebe6d9; padding: 4px 8px; 
+                width: 100%; 
+                height: 52px; 
+                flex-direction: row; 
+                align-items: center; 
+                border-right: none; 
+                border-bottom: 1px solid #ebe6d9; 
+                padding: 4px 8px; 
+                overflow-x: auto;
             }
             .sidebar-title { display: none; }
-            #player-list { display: flex; gap: 6px; overflow-x: auto; flex: 1; }
-            .player-card { margin-bottom: 0; white-space: nowrap; padding: 4px 8px; }
-            #btn-start { height: 32px; margin-top: 0; font-size: 11px; margin-left: 6px; }
+            #player-list { 
+                display: flex; 
+                gap: 6px; 
+                overflow-x: auto; 
+                flex: 1; 
+                align-items: center; 
+                padding-right: 4px;
+            }
+            .player-card { 
+                margin-bottom: 0; 
+                white-space: nowrap; 
+                padding: 4px 8px; 
+                height: 38px;
+                min-width: 110px;
+                flex-shrink: 0;
+            }
+            #btn-start { 
+                height: 36px; 
+                margin-top: 0; 
+                font-size: 11px; 
+                margin-left: 6px; 
+                padding: 0 12px; 
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
             .canvas-area { flex: 1; }
-            .chat-area { width: 100%; height: 140px; border-left: none; border-top: 1px solid #ebe6d9; }
+            .chat-area { width: 100%; height: 130px; border-left: none; border-top: 1px solid #ebe6d9; }
         }
     </style>
 </head>
@@ -483,25 +514,12 @@
     let canvasHistory = [];
     let historyStep = -1;
 
-    // 모바일/고해상도 캔버스 선명도 개선 함수
     function resizeCanvas() {
         if (!canvasWrapper || canvasWrapper.clientWidth === 0) return;
         
         const rect = canvasWrapper.getBoundingClientRect();
-        const dpr = window.devicePixelRatio || 1;
-
-        let tempImage = null;
-        if (canvas.width > 0 && canvas.height > 0) {
-            tempImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        }
-
-        canvas.width = rect.width * dpr;
-        canvas.height = rect.height * dpr;
-        ctx.scale(dpr, dpr);
-
-        if (tempImage) {
-            ctx.putImageData(tempImage, 0, 0);
-        }
+        canvas.width = rect.width;
+        canvas.height = rect.height;
     }
     window.addEventListener('resize', resizeCanvas);
 
@@ -662,37 +680,40 @@
         gameScreen.classList.add('active');
         displayRoomCode.innerText = roomCode;
         if (isHost) btnStart.style.display = 'block';
-        setTimeout(resizeCanvas, 50);
-        saveCanvasState();
+        setTimeout(() => {
+            resizeCanvas();
+            saveCanvasState();
+        }, 50);
     });
 
-    // 좌표계 계산 보정
-    function getPos(e) {
+    function getNormalizedPos(e) {
         const rect = canvas.getBoundingClientRect();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         
         return {
-            x: (clientX - rect.left) * (canvas.width / rect.width),
-            y: (clientY - rect.top) * (canvas.height / rect.height)
+            rx: (clientX - rect.left) / rect.width,
+            ry: (clientY - rect.top) / rect.height
         };
     }
 
     function startDraw(e) {
         if (!isMyTurn) return;
-        const pos = getPos(e);
+        const normPos = getNormalizedPos(e);
+        const pixelX = Math.floor(normPos.rx * canvas.width);
+        const pixelY = Math.floor(normPos.ry * canvas.height);
 
         if (currentTool === 'bucket') {
-            floodFill(Math.floor(pos.x), Math.floor(pos.y), colorPicker.value);
+            floodFill(pixelX, pixelY, colorPicker.value);
             saveCanvasState();
-            socket.emit('draw', { type: 'bucket', x: Math.floor(pos.x), y: Math.floor(pos.y), color: colorPicker.value });
+            socket.emit('draw', { type: 'bucket', rx: normPos.rx, ry: normPos.ry, color: colorPicker.value });
         } else {
             isDrawing = true;
             ctx.beginPath();
-            ctx.moveTo(pos.x, pos.y);
+            ctx.moveTo(pixelX, pixelY);
             socket.emit('draw', {
                 type: 'start',
-                x: pos.x, y: pos.y,
+                rx: normPos.rx, ry: normPos.ry,
                 color: colorPicker.value,
                 lineWidth: lineWidthInput.value
             });
@@ -701,16 +722,18 @@
 
     function moveDraw(e) {
         if (!isDrawing || !isMyTurn || currentTool !== 'pen') return;
-        const pos = getPos(e);
+        const normPos = getNormalizedPos(e);
+        const pixelX = normPos.rx * canvas.width;
+        const pixelY = normPos.ry * canvas.height;
 
         ctx.strokeStyle = colorPicker.value;
         ctx.lineWidth = lineWidthInput.value;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        ctx.lineTo(pos.x, pos.y);
+        ctx.lineTo(pixelX, pixelY);
         ctx.stroke();
 
-        socket.emit('draw', { type: 'move', x: pos.x, y: pos.y });
+        socket.emit('draw', { type: 'move', rx: normPos.rx, ry: normPos.ry });
     }
 
     function endDraw() {
@@ -765,13 +788,13 @@
             const card = document.createElement('div');
             card.className = `player-card ${p.isDrawing ? 'drawing' : ''}`;
             
-            const hostTag = p.id === hostId ? `<span class="host-badge">👑 방장</span>` : '';
+            const hostTag = p.id === hostId ? `<span class="host-badge">👑</span>` : '';
             card.innerHTML = `
                 <div class="player-info">
                     ${hostTag}
                     <span class="player-name">${p.nickname}</span>
                 </div>
-                <b class="player-score">${p.score}점</b>
+                <b class="player-score">${p.score}pt</b>
             `;
             playerList.appendChild(card);
         });
@@ -791,18 +814,21 @@
     socket.on('timerUpdate', (time) => { displayTimer.innerText = `${time}초`; });
 
     socket.on('draw', (data) => {
+        const px = data.rx * canvas.width;
+        const py = data.ry * canvas.height;
+
         if (data.type === 'start') {
             ctx.beginPath();
             ctx.strokeStyle = data.color;
             ctx.lineWidth = data.lineWidth;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
-            ctx.moveTo(data.x, data.y);
+            ctx.moveTo(px, py);
         } else if (data.type === 'move') {
-            ctx.lineTo(data.x, data.y);
+            ctx.lineTo(px, py);
             ctx.stroke();
         } else if (data.type === 'bucket') {
-            floodFill(data.x, data.y, data.color);
+            floodFill(Math.floor(px), Math.floor(py), data.color);
             saveCanvasState();
         } else if (data.type === 'end') {
             saveCanvasState();
