@@ -121,7 +121,6 @@ function handleLeaveRoom(socket) {
                 // 🌟 게임 진행 중일 때 퇴장 처리
                 if (room.isPlaying) {
                     if (room.players.length <= 1) {
-                        // 인원이 1명 이하가 되면 대기 상태로 전환
                         if (room.timer) {
                             clearInterval(room.timer);
                             room.timer = null;
@@ -143,7 +142,6 @@ function handleLeaveRoom(socket) {
                         io.to(roomCode).emit('clearCanvas');
                         io.to(roomCode).emit('timerUpdate', 0);
                     } else if (disconnectedPlayer.id === room.drawerId) {
-                        // 🛠️ 그림을 그리던 출제자가 퇴장한 경우 다음 턴 진행
                         if (room.timer) clearInterval(room.timer);
                         
                         io.to(roomCode).emit('chatMessage', { 
@@ -151,7 +149,6 @@ function handleLeaveRoom(socket) {
                             text: '🎨 출제자가 퇴장하여 다음 턴으로 넘어갑니다.' 
                         });
                         
-                        // 인덱스 보정 후 다음 턴 시작
                         room.drawerIndex = (room.drawerIndex - 1 + room.players.length) % room.players.length;
                         startNextTurn(roomCode);
                     }
@@ -203,7 +200,8 @@ io.on('connection', (socket) => {
         io.to(code).emit('chatMessage', { system: true, text: `${userNick}님이 입장했습니다.` });
     });
 
-    socket.on('startGame', () => {
+    // ⏳ 방장이 게임 시작 버튼을 눌렀을 때 카운트다운 요청 처리
+    socket.on('requestCountdown', () => {
         const roomCode = userRooms[socket.id];
         const room = rooms[roomCode];
 
@@ -211,6 +209,18 @@ io.on('connection', (socket) => {
         if (room.hostId !== socket.id) return socket.emit('errorMessage', '방장만 게임을 시작할 수 있습니다.');
         if (room.players.length < 2) return socket.emit('errorMessage', '최소 2명 이상 모여야 게임을 시작할 수 있습니다.');
         if (room.isPlaying) return socket.emit('errorMessage', '이미 게임이 진행 중입니다.');
+
+        // 방 전체에 카운트다운 시작 신호 브로드캐스트
+        io.to(roomCode).emit('startCountdown');
+    });
+
+    socket.on('startGame', () => {
+        const roomCode = userRooms[socket.id];
+        const room = rooms[roomCode];
+
+        if (!room) return;
+        if (room.hostId !== socket.id) return;
+        if (room.isPlaying) return;
 
         room.isPlaying = true;
         room.drawerIndex = -1;
