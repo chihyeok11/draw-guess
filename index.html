@@ -38,10 +38,10 @@
 
         #app { 
             width: 100%;
-            max-width: 1000px; 
-            height: 90vh;
-            height: 90dvh;
-            max-height: 720px;
+            max-width: 1100px; 
+            height: 92vh;
+            height: 92dvh;
+            max-height: 760px;
             background: #ffffff; 
             border-radius: 20px; 
             box-shadow: 0 15px 35px rgba(0,0,0,0.06); 
@@ -142,24 +142,24 @@
         header { 
             height: 50px; background: #fff; border-bottom: 1px solid #ebe6d9; 
             display: flex; justify-content: space-between; align-items: center; 
-            padding: 0 10px; flex-shrink: 0; gap: 4px; white-space: nowrap;
+            padding: 0 12px; flex-shrink: 0; gap: 6px; white-space: nowrap;
         }
-        .header-left { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .header-left { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
         .header-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
         
-        .room-info { font-weight: 700; font-size: 11px; color: #555; }
+        .room-info { font-weight: 700; font-size: 12px; color: #555; }
         .room-info span { color: #39a084; font-weight: 800; }
         
         .word-box { 
-            font-size: 12px; font-weight: 800; color: #f77f5d; background: #fff1ed; 
-            padding: 4px 8px; border-radius: 12px; letter-spacing: 0.5px; 
-            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px;
+            font-size: 13px; font-weight: 800; color: #f77f5d; background: #fff1ed; 
+            padding: 4px 10px; border-radius: 12px; letter-spacing: 0.5px; 
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px;
         }
-        .timer-box { font-size: 12px; font-weight: 800; color: #39a084; }
+        .timer-box { font-size: 13px; font-weight: 800; color: #39a084; }
         
         .btn-leave {
             background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5;
-            padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; cursor: pointer; transition: background 0.2s;
+            padding: 5px 9px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; transition: background 0.2s;
             white-space: nowrap;
         }
         .btn-leave:hover { background: #fca5a5; color: white; }
@@ -167,8 +167,8 @@
         .game-body { display: flex; flex: 1; width: 100%; height: calc(100% - 50px); overflow: hidden; }
 
         .sidebar { 
-            width: 180px; background: #fcfbf8; border-right: 1px solid #ebe6d9; 
-            padding: 10px; display: flex; flex-direction: column; flex-shrink: 0;
+            width: 200px; background: #fcfbf8; border-right: 1px solid #ebe6d9; 
+            padding: 12px; display: flex; flex-direction: column; flex-shrink: 0;
         }
         .sidebar-title { font-size: 11px; font-weight: 800; color: #888275; margin-bottom: 8px; }
         #player-list { flex: 1; overflow-y: auto; }
@@ -190,25 +190,26 @@
 
         .player-score { color: #39a084; font-weight: 800; white-space: nowrap; flex-shrink: 0; margin-left: auto; }
 
-        #btn-start { height: 38px; background: #39a084; border-radius: 8px; font-size: 13px; margin-top: 6px; display: none; }
+        #btn-start { height: 40px; background: #39a084; border-radius: 8px; font-size: 13px; margin-top: 8px; display: none; }
 
-        /* 💡 캔버스 영역 수정: 내부 요소를 수직 정렬하고 공간을 정확히 분할 */
+        /* 💡 PC/모바일 공통 1:1 정사각형 비율 강제 고정 설정 */
         .canvas-area { 
             flex: 1; display: flex; flex-direction: column; 
             background: #f4f0e6; position: relative; min-width: 0; min-height: 0;
-            justify-content: center; align-items: center; overflow: hidden; padding: 8px;
+            justify-content: center; align-items: center; overflow: hidden; padding: 12px; gap: 10px;
         }
 
         .canvas-wrapper { 
             position: relative;
             width: 100%;
-            flex: 1;
+            height: 100%;
             max-width: 100%;
             max-height: 100%;
-            aspect-ratio: 1 / 1; 
+            aspect-ratio: 1 / 1; /* 완벽한 정사각형 비율 유지 */
             background: #ffffff;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            margin-bottom: 6px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+            border-radius: 8px;
+            overflow: hidden;
         }
 
         #canvas { 
@@ -218,20 +219,20 @@
 
         .toolbar { 
             height: 44px; min-height: 44px; background: #fcfbf8; border: 1px solid #ebe6d9; 
-            border-radius: 8px; display: flex; align-items: center; padding: 0 8px; gap: 4px; flex-shrink: 0; overflow-x: auto;
-            width: 100%; max-width: 600px;
+            border-radius: 8px; display: flex; align-items: center; padding: 0 10px; gap: 6px; flex-shrink: 0; overflow-x: auto;
+            width: 100%; max-width: 650px;
         }
         .toolbar.hidden { display: none !important; }
 
         .tool-btn { 
-            height: 30px; padding: 0 8px; background: #fff; border: 1px solid #dcd7c9; 
+            height: 30px; padding: 0 9px; background: #fff; border: 1px solid #dcd7c9; 
             border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; color: #444; white-space: nowrap; flex-shrink: 0;
         }
         .tool-btn.active { background: #39a084; color: white; border-color: #39a084; }
         .color-picker { width: 28px; height: 28px; border: 1px solid #dcd7c9; border-radius: 6px; cursor: pointer; flex-shrink: 0; }
 
         .chat-area { 
-            width: 320px; height: 100%; border-left: 1px solid #ebe6d9; 
+            width: 300px; height: 100%; border-left: 1px solid #ebe6d9; 
             background: #fff; display: flex; flex-direction: column; flex-shrink: 0; 
             transition: all 0.2s ease; overflow: hidden; 
         }
@@ -298,10 +299,10 @@
 
             #btn-start { height: 36px; margin-top: 0; font-size: 12px; padding: 0 12px; margin-left: 6px; }
             
-            .canvas-area { flex: 1; min-height: 0; width: 100%; padding: 4px; }
-            .canvas-wrapper { width: 100%; height: auto; max-width: 100%; max-height: calc(100% - 48px); }
+            .canvas-area { flex: 1; min-height: 0; width: 100%; padding: 6px; gap: 6px; }
+            .canvas-wrapper { width: auto; height: 100%; max-width: 100%; max-height: 100%; aspect-ratio: 1 / 1; }
 
-            .chat-area { width: 100%; height: 140px; border-left: none; border-top: 1px solid #ebe6d9; flex-shrink: 0; }
+            .chat-area { width: 100%; height: 130px; border-left: none; border-top: 1px solid #ebe6d9; flex-shrink: 0; }
 
             body.keyboard-open .chat-area { height: 42px !important; }
             body.keyboard-open .chat-messages { display: none; }
