@@ -127,6 +127,7 @@ function handleLeaveRoom(socket) {
                         }
                         
                         room.isPlaying = false;
+                        room.currentRound = 0;
                         room.drawerId = null;
                         room.currentWord = '';
                         room.isRoundOver = false;
@@ -138,7 +139,7 @@ function handleLeaveRoom(socket) {
                             text: '⚠️ 인원이 부족하여 게임이 중단되었습니다. (최소 2명 필요)' 
                         });
 
-                        io.to(roomCode).emit('turnStart', { drawerId: null, hintMask: '대기 중...' });
+                        io.to(roomCode).emit('turnStart', { drawerId: null, hintMask: '대기 중...', currentRound: 0, maxRounds: 10 });
                         io.to(roomCode).emit('clearCanvas');
                         io.to(roomCode).emit('timerUpdate', 0);
                     } else if (disconnectedPlayer.id === room.drawerId) {
@@ -174,7 +175,9 @@ io.on('connection', (socket) => {
             timer: null,
             timeLeft: 60,
             usedWords: [],
-            isRoundOver: false
+            isRoundOver: false,
+            maxRounds: 10,   // 🌟 총 10라운드 설정
+            currentRound: 0  // 🌟 현재 라운드 초기화
         };
         userRooms[socket.id] = roomCode;
         socket.join(roomCode);
@@ -200,7 +203,6 @@ io.on('connection', (socket) => {
         io.to(code).emit('chatMessage', { system: true, text: `${userNick}님이 입장했습니다.` });
     });
 
-    // ⏳ 방장이 게임 시작 버튼을 눌렀을 때 카운트다운 요청 처리
     socket.on('requestCountdown', () => {
         const roomCode = userRooms[socket.id];
         const room = rooms[roomCode];
@@ -210,7 +212,6 @@ io.on('connection', (socket) => {
         if (room.players.length < 2) return socket.emit('errorMessage', '최소 2명 이상 모여야 게임을 시작할 수 있습니다.');
         if (room.isPlaying) return socket.emit('errorMessage', '이미 게임이 진행 중입니다.');
 
-        // 방 전체에 카운트다운 시작 신호 브로드캐스트
         io.to(roomCode).emit('startCountdown');
     });
 
@@ -224,6 +225,7 @@ io.on('connection', (socket) => {
 
         room.isPlaying = true;
         room.drawerIndex = -1;
+        room.currentRound = 0; // 🌟 게임 시작 시 라운드 초기화
         room.usedWords = [];
         startNextTurn(roomCode);
     });
@@ -231,6 +233,25 @@ io.on('connection', (socket) => {
     function startNextTurn(roomCode) {
         const room = rooms[roomCode];
         if (!room || !room.isPlaying || room.players.length < 2) return;
+
+        // 🌟 라운드 증가 및 10라운드 도달 시 게임 종료 처리
+        room.currentRound++;
+        if (room.currentRound > room.maxRounds) {
+            if (room.timer) clearInterval(room.timer);
+            room.isPlaying = false;
+            room.currentRound = 0;
+
+            // 최고 점수 우승자 선정
+            let winner = room.players.reduce((prev, current) => (prev.score > current.score) ? prev : current);
+
+            io.to(roomCode).emit('gameEnded', { winner });
+            io.to(roomCode).emit('chatMessage', { system: true, text: `🏆 10라운드가 종료되었습니다! 최종 우승자: ${winner.nickname}` });
+            
+            room.players.forEach(p => p.isDrawing = false);
+            io.to(roomCode).emit('updatePlayers', { players: room.players, hostId: room.hostId });
+            io.to(roomCode).emit('turnStart', { drawerId: null, hintMask: '게임 종료', currentRound: 10, maxRounds: 10 });
+            return;
+        }
 
         room.isRoundOver = false;
         room.drawerIndex = (room.drawerIndex + 1) % room.players.length;
@@ -242,7 +263,14 @@ io.on('connection', (socket) => {
         io.to(roomCode).emit('updatePlayers', { players: room.players, hostId: room.hostId });
 
         const maskWord = '_ '.repeat(room.currentWord.length).trim();
-        io.to(roomCode).emit('turnStart', { drawerId: drawer.id, hintMask: `제시어: ${maskWord}` });
+        
+        // 🌟 현재 라운드 정보(currentRound, maxRounds) 전달
+        io.to(roomCode).emit('turnStart', { 
+            drawerId: drawer.id, 
+            hintMask: `제시어: ${maskWord}`,
+            currentRound: room.currentRound,
+            maxRounds: room.maxRounds
+        });
         io.to(drawer.id).emit('yourWord', room.currentWord);
 
         room.timeLeft = 60;
