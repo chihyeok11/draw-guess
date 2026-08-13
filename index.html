@@ -198,21 +198,20 @@
             justify-content: center; align-items: center; overflow: hidden;
         }
 
-        /* 💡 [핵심 수정] 캔버스 래퍼를 항상 1:1 정사각형 비율로 가운데 정렬 */
         .canvas-wrapper { 
             position: relative;
             width: 100%;
             height: 100%;
             max-width: 100%;
             max-height: 100%;
-            aspect-ratio: 1 / 1; /* 정사각형 비율 강제 고정 */
-            background: #fff;
+            aspect-ratio: 1 / 1; 
+            background: #ffffff;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
 
         #canvas { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: #fff; touch-action: none; cursor: crosshair; 
+            background-color: #ffffff !important; touch-action: none; cursor: crosshair; 
         }
 
         .toolbar { 
@@ -456,11 +455,11 @@
         }, 350);
     }
 
-    // 💡 [정사각형 해상도 고정] 캔버스 내부 해상도를 항상 600x600으로 통일하여 비율 왜곡 방지
+    // 💡 [수정] 캔버스 크기 조절 및 배경색 강제 흰색 채우기 적용
     function resizeCanvas() {
         if (!canvasWrapper || canvasWrapper.clientWidth === 0) return;
         
-        const targetSize = 600; // 내부 해상도를 600x600 정사각형으로 고정
+        const targetSize = 600; 
         let tempCanvasData = null;
 
         if (canvas.width > 0 && canvas.height > 0) {
@@ -474,8 +473,11 @@
         canvas.width = targetSize;
         canvas.height = targetSize;
 
+        // 캔버스 기본 배경을 흰색으로 강제 채우기 (모바일 투명도 문제 해결)
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
         if (tempCanvasData) {
-            // 이전 크기와 해상도가 다를 경우에 대비해 스케일링 복원
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = tempCanvasData.width;
             tempCanvas.height = tempCanvasData.height;
@@ -846,7 +848,8 @@
         const roundText = (currentRound && maxRounds) ? ` [${currentRound}/${maxRounds}라운드]` : '';
         displayWord.innerText = isMyTurn ? `단어 확인 중...${roundText}` : `${hintMask}${roundText}`;
         
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         canvasHistory = [];
         historyStep = -1;
         saveCanvasState();
@@ -890,7 +893,8 @@
     });
 
     socket.on('clearCanvas', () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         saveCanvasState();
     });
 
