@@ -63,7 +63,6 @@
             flex-direction: column; 
         }
 
-        /* 🎬 슬라이드 애니메이션 효과 */
         @keyframes slideInRight {
             from { opacity: 0; transform: translateX(40px); }
             to { opacity: 1; transform: translateX(0); }
@@ -152,17 +151,9 @@
         .room-info span { color: #39a084; font-weight: 800; }
         
         .word-box { 
-            font-size: 12px; 
-            font-weight: 800; 
-            color: #f77f5d; 
-            background: #fff1ed; 
-            padding: 4px 8px; 
-            border-radius: 12px; 
-            letter-spacing: 0.5px; 
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            max-width: 220px;
+            font-size: 12px; font-weight: 800; color: #f77f5d; background: #fff1ed; 
+            padding: 4px 8px; border-radius: 12px; letter-spacing: 0.5px; 
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px;
         }
         .timer-box { font-size: 12px; font-weight: 800; color: #39a084; }
         
@@ -203,9 +194,22 @@
 
         .canvas-area { 
             flex: 1; display: flex; flex-direction: column; 
-            background: #fff; position: relative; min-height: 0;
+            background: #f4f0e6; position: relative; min-height: 0;
+            justify-content: center; align-items: center; overflow: hidden;
         }
-        .canvas-wrapper { flex: 1; width: 100%; height: 100%; position: relative; min-height: 0; }
+
+        /* 💡 [핵심 수정] 캔버스 래퍼를 항상 1:1 정사각형 비율로 가운데 정렬 */
+        .canvas-wrapper { 
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            aspect-ratio: 1 / 1; /* 정사각형 비율 강제 고정 */
+            background: #fff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
         #canvas { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
             background: #fff; touch-action: none; cursor: crosshair; 
@@ -225,186 +229,76 @@
         .color-picker { width: 30px; height: 30px; border: 1px solid #dcd7c9; border-radius: 6px; cursor: pointer; flex-shrink: 0; }
 
         .chat-area { 
-            width: 320px; 
-            height: 100%; 
-            border-left: 1px solid #ebe6d9; 
-            background: #fff; 
-            display: flex; 
-            flex-direction: column; 
-            flex-shrink: 0; 
-            transition: all 0.2s ease;
-            overflow: hidden; 
+            width: 320px; height: 100%; border-left: 1px solid #ebe6d9; 
+            background: #fff; display: flex; flex-direction: column; flex-shrink: 0; 
+            transition: all 0.2s ease; overflow: hidden; 
         }
 
         .chat-messages { 
-            flex: 1; 
-            min-height: 0; 
-            padding: 12px; 
-            overflow-y: auto; 
-            font-size: 12px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 6px; 
-            background: #fdfcf9; 
+            flex: 1; min-height: 0; padding: 12px; overflow-y: auto; font-size: 12px; 
+            display: flex; flex-direction: column; gap: 6px; background: #fdfcf9; 
         }
 
         .chat-msg { 
-            background: #ffffff; 
-            border: 1px solid #eae5d9; 
-            padding: 6px 10px; 
-            border-radius: 8px; 
-            word-break: break-all; 
-            line-height: 1.4;
-            color: #1a1a2e;
+            background: #ffffff; border: 1px solid #eae5d9; padding: 6px 10px; 
+            border-radius: 8px; word-break: break-all; line-height: 1.4; color: #1a1a2e;
             box-shadow: 0 1px 2px rgba(0,0,0,0.02);
         }
 
-        .chat-msg.system { 
-            background: #fff8d6; 
-            border-color: #fef08a; 
-            color: #b45309; 
-            font-weight: 700; 
-            text-align: center; 
-        }
+        .chat-msg.system { background: #fff8d6; border-color: #fef08a; color: #b45309; font-weight: 700; text-align: center; }
 
-        .chat-input-box { 
-            height: 52px; 
-            padding: 8px; 
-            border-top: 1px solid #ebe6d9; 
-            display: flex; 
-            background: #fcfbf8; 
-            flex-shrink: 0; 
-        }
+        .chat-input-box { height: 52px; padding: 8px; border-top: 1px solid #ebe6d9; display: flex; background: #fcfbf8; flex-shrink: 0; }
+        .chat-input-box input { width: 100%; height: 100%; padding: 0 12px; border: 1px solid #dcd7c9; border-radius: 8px; outline: none; font-size: 12px; background: #ffffff; }
+        .chat-input-box input:focus { border-color: #39a084; }
 
-        .chat-input-box input { 
-            width: 100%; 
-            height: 100%; 
-            padding: 0 12px; 
-            border: 1px solid #dcd7c9; 
-            border-radius: 8px; 
-            outline: none; 
-            font-size: 12px; 
-            background: #ffffff; 
-        }
-
-        .chat-input-box input:focus { 
-            border-color: #39a084; 
-        }
-
-        /* 🏆 오버레이 및 카운트다운 스타일 */
         .correct-overlay { 
-            position: absolute; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            background: rgba(0,0,0,0.4); 
-            display: none; 
-            justify-content: center; 
-            align-items: center; 
-            z-index: 100; 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.4); display: none; justify-content: center; align-items: center; z-index: 100; 
         }
+        .correct-overlay.show { display: flex; }
+        .correct-banner { background: white; padding: 24px 36px; border-radius: 16px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
 
-        .correct-overlay.show { 
-            display: flex; 
-        }
-
-        .correct-banner { 
-            background: white; 
-            padding: 24px 36px; 
-            border-radius: 16px; 
-            text-align: center; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15); 
-        }
-
-        /* ⏳ 카운트다운 전용 스타일 */
         #countdown-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 150;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 150;
         }
-        #countdown-overlay.show {
-            display: flex;
-        }
-        .countdown-number {
-            font-family: 'Syne', sans-serif;
-            font-size: 80px;
-            font-weight: 800;
-            color: #ffffff;
-            animation: popIn 0.5s ease-out;
-        }
+        #countdown-overlay.show { display: flex; }
+        .countdown-number { font-family: 'Syne', sans-serif; font-size: 80px; font-weight: 800; color: #ffffff; animation: popIn 0.5s ease-out; }
         @keyframes popIn {
             0% { transform: scale(0.5); opacity: 0; }
             100% { transform: scale(1); opacity: 1; }
         }
 
-        /* 📱 모바일 UI 최적화 */
         @media (max-width: 768px) {
             body { padding: 0; }
             #app { height: 100vh; height: 100dvh; max-height: none; border-radius: 0; border: none; }
             .game-body { flex-direction: column; }
             
             .sidebar { 
-                width: 100%; 
-                height: auto; 
-                min-height: 48px;
-                flex-direction: row; 
-                align-items: center; 
-                justify-content: space-between; 
-                border-right: none; 
-                border-bottom: 1px solid #ebe6d9; 
-                padding: 6px 8px; 
-                background: #f8f6f0; 
-                z-index: 10; 
-                flex-shrink: 0;
-                flex-wrap: wrap; 
+                width: 100%; height: auto; min-height: 48px; flex-direction: row; 
+                align-items: center; justify-content: space-between; border-right: none; 
+                border-bottom: 1px solid #ebe6d9; padding: 6px 8px; background: #f8f6f0; 
+                z-index: 10; flex-shrink: 0; flex-wrap: wrap; 
             }
             .sidebar-title { display: none; }
 
             #player-list { 
-                display: flex; 
-                flex-direction: row; 
-                gap: 6px; 
-                overflow-x: auto; 
-                overflow-y: hidden; 
-                flex: 1; 
-                align-items: center; 
-                padding: 2px 4px; 
-                min-width: 0; 
-                -webkit-overflow-scrolling: touch;
+                display: flex; flex-direction: row; gap: 6px; overflow-x: auto; 
+                overflow-y: hidden; flex: 1; align-items: center; padding: 2px 4px; min-width: 0; 
             }
-
             #player-list::-webkit-scrollbar { display: none; }
-            #player-list { -ms-overflow-style: none; scrollbar-width: none; }
 
             .player-card { 
                 margin-bottom: 0; white-space: nowrap; padding: 4px 8px; height: 36px; 
-                min-width: 95px; flex-shrink: 0; display: flex; align-items: center; 
-                justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+                min-width: 95px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; 
             }
+            .player-name { font-size: 11px; max-width: 50px; overflow: hidden; text-overflow: ellipsis; }
 
-            .player-info { display: flex; align-items: center; gap: 4px; overflow: hidden; }
-            .player-name { font-size: 11px; max-width: 50px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-            .player-score { font-size: 11px; margin-left: 4px; }
-
-            #btn-start { 
-                height: 36px; 
-                margin-top: 0; 
-                font-size: 12px; 
-                padding: 0 12px; 
-                white-space: nowrap; 
-                flex-shrink: 0; 
-                margin-left: 6px;
-            }
+            #btn-start { height: 36px; margin-top: 0; font-size: 12px; padding: 0 12px; margin-left: 6px; }
             
-            .canvas-area { flex: 1; min-height: 0; }
+            .canvas-area { flex: 1; min-height: 0; width: 100%; }
+            .canvas-wrapper { width: auto; height: auto; max-width: 100%; max-height: 100%; }
+
             .chat-area { width: 100%; height: 140px; border-left: none; border-top: 1px solid #ebe6d9; flex-shrink: 0; }
 
             body.keyboard-open .chat-area { height: 42px !important; }
@@ -417,47 +311,32 @@
 <body>
 
 <div id="app">
-    <!-- 로비 화면 -->
     <div id="lobby-screen" class="screen active slide-in-right">
         <div class="brand-header">
             <div class="brand-icon">✏️</div>
             <span>draw.guess</span>
         </div>
-
-        <h1 class="hero-title">
-            Make a mark.<br>
-            <span class="highlight">Make a mess.</span>
-        </h1>
-
-        <p class="hero-desc">
-            실시간 그림 퀴즈 게임!<br>
-            친구들과 방을 만들고 마음껏 그려보세요.
-        </p>
-
+        <h1 class="hero-title">Make a mark.<br><span class="highlight">Make a mess.</span></h1>
+        <p class="hero-desc">실시간 그림 퀴즈 게임!<br>친구들과 방을 만들고 마음껏 그려보세요.</p>
         <div class="tag-group">
             <span class="info-tag">👥 2-8 players</span>
             <span class="info-tag">⏱️ 60s rounds</span>
         </div>
-
         <div class="lobby-card">
             <div class="tab-group">
                 <button class="tab-btn active" id="tab-create">방 만들기</button>
                 <button class="tab-btn" id="tab-join">참가하기</button>
             </div>
-
             <label class="form-label">당신의 닉네임은 무엇인가요?</label>
             <input type="text" id="nickname-input" class="form-input" placeholder="닉네임 입력" maxlength="10">
-
             <div id="code-input-group" style="display: none;">
                 <label class="form-label">참가할 방 코드</label>
                 <input type="text" id="roomcode-input" class="form-input" placeholder="6자리 코드" maxlength="6">
             </div>
-
             <button id="btn-submit" class="submit-btn">방 만들기 →</button>
         </div>
     </div>
 
-    <!-- 게임 화면 -->
     <div id="game-screen" class="screen">
         <header>
             <div class="header-left">
@@ -508,7 +387,6 @@
             </div>
         </div>
 
-        <!-- ⏳ 카운트다운 오버레이 -->
         <div id="countdown-overlay">
             <div class="countdown-number" id="countdown-num">3</div>
         </div>
@@ -578,13 +456,13 @@
         }, 350);
     }
 
-    // 💡 [수정됨] 캔버스 리사이즈 시 기존 그림이 지워지지 않도록 백업 및 복원 로직 추가
+    // 💡 [정사각형 해상도 고정] 캔버스 내부 해상도를 항상 600x600으로 통일하여 비율 왜곡 방지
     function resizeCanvas() {
         if (!canvasWrapper || canvasWrapper.clientWidth === 0) return;
-        const rect = canvasWrapper.getBoundingClientRect();
         
-        // 이미 캔버스에 내용이 있다면 임시로 이미지 데이터 백업
+        const targetSize = 600; // 내부 해상도를 600x600 정사각형으로 고정
         let tempCanvasData = null;
+
         if (canvas.width > 0 && canvas.height > 0) {
             try {
                 tempCanvasData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -593,12 +471,17 @@
             }
         }
 
-        canvas.width = rect.width;
-        canvas.height = rect.height;
+        canvas.width = targetSize;
+        canvas.height = targetSize;
 
-        // 백업해둔 데이터가 있다면 새 크기의 캔버스에 복원
         if (tempCanvasData) {
-            ctx.putImageData(tempCanvasData, 0, 0);
+            // 이전 크기와 해상도가 다를 경우에 대비해 스케일링 복원
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = tempCanvasData.width;
+            tempCanvas.height = tempCanvasData.height;
+            tempCanvas.getContext('2d').putImageData(tempCanvasData, 0, 0);
+
+            ctx.drawImage(tempCanvas, 0, 0, tempCanvas.width, tempCanvas.height, 0, 0, targetSize, targetSize);
         }
     }
     window.addEventListener('resize', resizeCanvas);
