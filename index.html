@@ -143,18 +143,34 @@
         header { 
             height: 50px; background: #fff; border-bottom: 1px solid #ebe6d9; 
             display: flex; justify-content: space-between; align-items: center; 
-            padding: 0 16px; flex-shrink: 0; gap: 8px;
+            padding: 0 10px; flex-shrink: 0; gap: 4px; white-space: nowrap;
         }
-        .header-left { display: flex; align-items: center; gap: 10px; }
-        .header-right { display: flex; align-items: center; gap: 10px; }
-        .room-info { font-weight: 700; font-size: 13px; color: #555; }
+        .header-left { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .header-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        
+        .room-info { font-weight: 700; font-size: 11px; color: #555; }
         .room-info span { color: #39a084; font-weight: 800; }
-        .word-box { font-size: 15px; font-weight: 800; color: #f77f5d; background: #fff1ed; padding: 4px 12px; border-radius: 16px; letter-spacing: 1px; }
-        .timer-box { font-size: 14px; font-weight: 800; color: #39a084; }
+        
+        /* 🛠️ 제시어 및 버튼 줄바꿈 방지 및 크기 최적화 */
+        .word-box { 
+            font-size: 12px; 
+            font-weight: 800; 
+            color: #f77f5d; 
+            background: #fff1ed; 
+            padding: 4px 8px; 
+            border-radius: 12px; 
+            letter-spacing: 0.5px; 
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 150px;
+        }
+        .timer-box { font-size: 12px; font-weight: 800; color: #39a084; }
         
         .btn-leave {
             background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5;
-            padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; transition: background 0.2s;
+            padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; cursor: pointer; transition: background 0.2s;
+            white-space: nowrap;
         }
         .btn-leave:hover { background: #fca5a5; color: white; }
 
@@ -353,8 +369,8 @@
 <body>
 
 <div id="app">
-    <!-- 로비 화면 -->
-    <div id="lobby-screen" class="screen active">
+    <!-- 로비 화면 (처음 접속 시 slide-in-right 애니메이션 자동 적용) -->
+    <div id="lobby-screen" class="screen active slide-in-right">
         <div class="brand-header">
             <div class="brand-icon">✏️</div>
             <span>draw.guess</span>
@@ -883,7 +899,6 @@
         saveCanvasState();
     });
 
-    /* 💬 서버 이벤트명(chatMessage)에 맞춘 채팅 수신 핸들러 */
     socket.on('chatMessage', (data) => {
         const msgDiv = document.createElement('div');
         
