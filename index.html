@@ -162,7 +162,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            max-width: 150px;
+            max-width: 220px;
         }
         .timer-box { font-size: 12px; font-weight: 800; color: #39a084; }
         
@@ -199,7 +199,7 @@
 
         .player-score { color: #39a084; font-weight: 800; white-space: nowrap; flex-shrink: 0; margin-left: auto; }
 
-        #btn-start { height: 38px; background: #39a084; border-radius: 8px; font-size: 13px; margin-top: 6px; }
+        #btn-start { height: 38px; background: #39a084; border-radius: 8px; font-size: 13px; margin-top: 6px; display: none; }
 
         .canvas-area { 
             flex: 1; display: flex; flex-direction: column; 
@@ -394,10 +394,7 @@
             .player-name { font-size: 11px; max-width: 50px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
             .player-score { font-size: 11px; margin-left: 4px; }
 
-            /* 👑 모바일에서도 방장 권한 시 버튼이 확실히 나타나도록 수정 */
             #btn-start { 
-                display: inline-block !important; 
-                width: auto !important; 
                 height: 36px; 
                 margin-top: 0; 
                 font-size: 12px; 
@@ -477,7 +474,7 @@
             <div class="sidebar">
                 <div class="sidebar-title">PLAYERS</div>
                 <div id="player-list"></div>
-                <button id="btn-start" class="submit-btn" style="display:none;">게임 시작</button>
+                <button id="btn-start" class="submit-btn">게임 시작</button>
             </div>
 
             <div class="canvas-area">
@@ -926,6 +923,7 @@
             playerList.appendChild(card);
         });
 
+        // 🌟 방장 권한에 따라 게임 시작 버튼 노출 제어 (PC/모바일 공통)
         if (!isGameStarted) {
             btnStart.style.display = isHostUser ? 'block' : 'none';
         } else {
@@ -946,8 +944,10 @@
             toolbar.classList.add('hidden');
         }
 
-        const roundText = currentRound ? ` [${currentRound}/${maxRounds}라운드]` : '';
+        // 🌟 PC/모바일 모두 라운드 정보가 상단 헤더에 정확히 표시되도록 설정
+        const roundText = (currentRound && maxRounds) ? ` [${currentRound}/${maxRounds}라운드]` : '';
         displayWord.innerText = isMyTurn ? `단어 확인 중...${roundText}` : `${hintMask}${roundText}`;
+        
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         canvasHistory = [];
         historyStep = -1;
@@ -955,7 +955,14 @@
         setTimeout(resizeCanvas, 50);
     });
 
-    socket.on('yourWord', (word) => { displayWord.innerText = `제시어: ${word}`; });
+    socket.on('yourWord', (word) => { 
+        // 출제자가 자신의 단어를 받았을 때도 현재 라운드 정보 유지
+        const currentText = displayWord.innerText;
+        const roundMatch = currentText.match(/\[\d+\/\d+라운드\]/);
+        const roundStr = roundMatch ? ` ${roundMatch[0]}` : '';
+        displayWord.innerText = `제시어: ${word}${roundStr}`; 
+    });
+    
     socket.on('timerUpdate', (time) => { displayTimer.innerText = `${time}초`; });
 
     socket.on('draw', (data) => {
