@@ -352,15 +352,33 @@
             .game-body { flex-direction: column; }
             
             .sidebar { 
-                width: 100%; height: 48px; flex-direction: row; align-items: center; 
-                justify-content: space-between; border-right: none; border-bottom: 1px solid #ebe6d9; 
-                padding: 4px 8px; background: #f8f6f0; z-index: 10; flex-shrink: 0;
+                width: 100%; 
+                height: auto; 
+                min-height: 48px;
+                flex-direction: row; 
+                align-items: center; 
+                justify-content: space-between; 
+                border-right: none; 
+                border-bottom: 1px solid #ebe6d9; 
+                padding: 6px 8px; 
+                background: #f8f6f0; 
+                z-index: 10; 
+                flex-shrink: 0;
+                flex-wrap: wrap; 
             }
             .sidebar-title { display: none; }
 
             #player-list { 
-                display: flex; flex-direction: row; gap: 6px; overflow-x: auto; overflow-y: hidden; 
-                flex: 1; align-items: center; padding: 2px 4px; min-width: 0; -webkit-overflow-scrolling: touch;
+                display: flex; 
+                flex-direction: row; 
+                gap: 6px; 
+                overflow-x: auto; 
+                overflow-y: hidden; 
+                flex: 1; 
+                align-items: center; 
+                padding: 2px 4px; 
+                min-width: 0; 
+                -webkit-overflow-scrolling: touch;
             }
 
             #player-list::-webkit-scrollbar { display: none; }
@@ -376,9 +394,17 @@
             .player-name { font-size: 11px; max-width: 50px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
             .player-score { font-size: 11px; margin-left: 4px; }
 
+            /* 👑 모바일에서도 방장 권한 시 버튼이 확실히 나타나도록 수정 */
             #btn-start { 
-                width: auto !important; height: 36px; margin-top: 0; font-size: 12px; 
-                padding: 0 12px; white-space: nowrap; flex-shrink: 0; margin-left: 6px;
+                display: inline-block !important; 
+                width: auto !important; 
+                height: 36px; 
+                margin-top: 0; 
+                font-size: 12px; 
+                padding: 0 12px; 
+                white-space: nowrap; 
+                flex-shrink: 0; 
+                margin-left: 6px;
             }
             
             .canvas-area { flex: 1; min-height: 0; }
@@ -485,7 +511,7 @@
             </div>
         </div>
 
-        <!-- ⏳ 카운트다운 오버레이 추가 -->
+        <!-- ⏳ 카운트다운 오버레이 -->
         <div id="countdown-overlay">
             <div class="countdown-number" id="countdown-num">3</div>
         </div>
@@ -714,17 +740,15 @@
         }
     }
 
-    // 🛠️ 인원 체크 및 카운트다운 시작 로직 반영
     btnStart.addEventListener('click', () => { 
         const currentPlayers = playerList.querySelectorAll('.player-card');
         if (currentPlayers.length < 2) {
             alert('인원이 부족하여 게임을 시작할 수 없습니다! (최소 2명 필요)');
             return;
         }
-        socket.emit('requestCountdown'); // 서버에 카운트다운 요청 (또는 직접 클라이언트 연출)
+        socket.emit('requestCountdown');
     });
 
-    // 서버 또는 자체 카운트다운 수신 시 실행될 함수
     function runCountdown(onComplete) {
         let count = 3;
         countdownNum.innerText = count;
@@ -909,7 +933,7 @@
         }
     });
 
-    socket.on('turnStart', ({ drawerId, hintMask }) => {
+    socket.on('turnStart', ({ drawerId, hintMask, currentRound, maxRounds }) => {
         isGameStarted = true;
         btnStart.style.display = 'none';
         
@@ -922,7 +946,8 @@
             toolbar.classList.add('hidden');
         }
 
-        displayWord.innerText = isMyTurn ? '단어 확인 중...' : hintMask;
+        const roundText = currentRound ? ` [${currentRound}/${maxRounds}라운드]` : '';
+        displayWord.innerText = isMyTurn ? `단어 확인 중...${roundText}` : `${hintMask}${roundText}`;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         canvasHistory = [];
         historyStep = -1;
@@ -1016,8 +1041,8 @@
         toolbar.classList.add('hidden');
         displayWord.innerText = '게임 종료';
 
-        correctTitle.innerText = '🏆 게임 종료';
-        correctText.innerText = `최종 승자: ${winner.nickname} (${winner.score}점)`;
+        correctTitle.innerText = '🏆 게임 최종 결과';
+        correctText.innerText = winner ? `최종 우승자: ${winner.nickname} (${winner.score}점)` : '공동 우승 또는 무승부';
         correctWord.innerText = '';
         correctOverlay.classList.add('show');
 
