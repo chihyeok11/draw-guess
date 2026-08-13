@@ -238,8 +238,15 @@ io.on('connection', (socket) => {
         const room = rooms[roomCode];
         if (!room || !room.isPlaying || room.players.length < 2) return;
 
-        // 🌟 라운드 증가 및 10라운드 도달 시 게임 종료 처리
-        room.currentRound++;
+        // 🌟 다음 출제자 순번 계산
+        const nextDrawerIndex = (room.drawerIndex + 1) % room.players.length;
+
+        // 🌟 방의 모든 사람이 한 번씩 그렸을 때 (첫번째 플레이어로 다시 돌아올 때) 라운드 증가
+        if (nextDrawerIndex === 0) {
+            room.currentRound++;
+        }
+
+        // 🌟 최대 라운드(10라운드) 초과 시 게임 종료 처리
         if (room.currentRound > room.maxRounds) {
             if (room.timer) clearInterval(room.timer);
             room.isPlaying = false;
@@ -249,7 +256,7 @@ io.on('connection', (socket) => {
             let winner = room.players.reduce((prev, current) => (prev.score > current.score) ? prev : current);
 
             io.to(roomCode).emit('gameEnded', { winner });
-            io.to(roomCode).emit('chatMessage', { system: true, text: `🏆 10라운드가 종료되었습니다! 최종 우승자: ${winner.nickname}` });
+            io.to(roomCode).emit('chatMessage', { system: true, text: `🏆 ${room.maxRounds}라운드가 종료되었습니다! 최종 우승자: ${winner.nickname}` });
             
             // 💡 정상적으로 게임이 종료되었을 때 모든 플레이어 점수 초기화
             room.players.forEach(p => {
@@ -258,12 +265,12 @@ io.on('connection', (socket) => {
             });
             
             io.to(roomCode).emit('updatePlayers', { players: room.players, hostId: room.hostId });
-            io.to(roomCode).emit('turnStart', { drawerId: null, hintMask: '게임 종료', currentRound: 10, maxRounds: 10 });
+            io.to(roomCode).emit('turnStart', { drawerId: null, hintMask: '게임 종료', currentRound: room.maxRounds, maxRounds: room.maxRounds });
             return;
         }
 
+        room.drawerIndex = nextDrawerIndex;
         room.isRoundOver = false;
-        room.drawerIndex = (room.drawerIndex + 1) % room.players.length;
         const drawer = room.players[room.drawerIndex];
         room.drawerId = drawer.id;
         room.currentWord = getRandomWord(room);
@@ -273,7 +280,7 @@ io.on('connection', (socket) => {
 
         const maskWord = '_ '.repeat(room.currentWord.length).trim();
         
-        // 🌟 현재 라운드 정보(currentRound, maxRounds) 전달
+        // 🌟 현재 라운드 정보 전달
         io.to(roomCode).emit('turnStart', { 
             drawerId: drawer.id, 
             hintMask: `제시어: ${maskWord}`,
