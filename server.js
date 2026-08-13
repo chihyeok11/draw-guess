@@ -132,11 +132,15 @@ function handleLeaveRoom(socket) {
                         room.currentWord = '';
                         room.isRoundOver = false;
 
-                        room.players.forEach(p => p.isDrawing = false);
+                        // 💡 게임이 중단되었을 때 플레이어 점수 초기화
+                        room.players.forEach(p => {
+                            p.isDrawing = false;
+                            p.score = 0;
+                        });
 
                         io.to(roomCode).emit('chatMessage', { 
                             system: true, 
-                            text: '⚠️ 인원이 부족하여 게임이 중단되었습니다. (최소 2명 필요)' 
+                            text: '⚠️ 인원이 부족하여 게임이 중단되었습니다. 모든 점수가 초기화됩니다.' 
                         });
 
                         io.to(roomCode).emit('turnStart', { drawerId: null, hintMask: '대기 중...', currentRound: 0, maxRounds: 10 });
@@ -247,7 +251,12 @@ io.on('connection', (socket) => {
             io.to(roomCode).emit('gameEnded', { winner });
             io.to(roomCode).emit('chatMessage', { system: true, text: `🏆 10라운드가 종료되었습니다! 최종 우승자: ${winner.nickname}` });
             
-            room.players.forEach(p => p.isDrawing = false);
+            // 💡 정상적으로 게임이 종료되었을 때 모든 플레이어 점수 초기화
+            room.players.forEach(p => {
+                p.isDrawing = false;
+                p.score = 0;
+            });
+            
             io.to(roomCode).emit('updatePlayers', { players: room.players, hostId: room.hostId });
             io.to(roomCode).emit('turnStart', { drawerId: null, hintMask: '게임 종료', currentRound: 10, maxRounds: 10 });
             return;
