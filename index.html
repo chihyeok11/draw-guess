@@ -160,7 +160,6 @@
         }
         .timer-box { font-size: 13px; font-weight: 800; color: #39a084; }
         
-        /* 🔊 음소거 버튼 스타일 */
         .btn-sound {
             background: #f0ece1;
             border: 1px solid #dcd7c9;
@@ -380,7 +379,6 @@
             </div>
             <div class="word-box" id="display-word">대기 중...</div>
             <div class="header-right">
-                <!-- 🔊 음악 음소거 토글 버튼 -->
                 <button class="btn-sound" id="btn-sound" title="음악 켜기/끄기">🔊</button>
                 <div class="timer-box" id="display-timer">60초</div>
             </div>
@@ -483,20 +481,37 @@
 
     let isMuted = false;
     let currentBGM = null;
+    let isAudioUnlocked = false;
 
     bgmLobby.volume = 0.25;
     bgmGame.volume = 0.25;
 
-    // 🔓 사용자가 화면 어디든 처음 클릭하면 차단된 브라우저 오디오 재생을 자동으로 해제합니다.
-    document.addEventListener('click', function unlockAudio() {
-        if (currentBGM && currentBGM.paused && !isMuted) {
-            currentBGM.play().catch(err => console.log("Audio play error:", err));
+    // 🔓 사용자가 화면을 터치/클릭할 때 브라우저의 오디오 잠금을 즉시 해제합니다.
+    function unlockAudio() {
+        if (!isAudioUnlocked) {
+            const p1 = bgmLobby.play();
+            if (p1 !== undefined) {
+                p1.then(() => { if (currentBGM !== bgmLobby) bgmLobby.pause(); }).catch(() => {});
+            }
+
+            const p2 = bgmGame.play();
+            if (p2 !== undefined) {
+                p2.then(() => { if (currentBGM !== bgmGame) bgmGame.pause(); }).catch(() => {});
+            }
+
+            isAudioUnlocked = true;
         }
-    }, { once: true });
+
+        if (currentBGM && currentBGM.paused && !isMuted) {
+            currentBGM.play().catch(() => {});
+        }
+    }
+
+    document.addEventListener('click', unlockAudio);
+    document.addEventListener('touchstart', unlockAudio);
+    document.addEventListener('keydown', unlockAudio);
 
     function playBGM(type) {
-        if (isMuted) return;
-
         let targetBGM = (type === 'lobby') ? bgmLobby : (type === 'game') ? bgmGame : null;
 
         if (currentBGM === targetBGM && currentBGM && !currentBGM.paused) return;
@@ -508,14 +523,15 @@
 
         currentBGM = targetBGM;
 
-        if (currentBGM) {
-            currentBGM.play().catch(() => {
-                console.log("사용자 상호작용 후 음악이 재생됩니다.");
+        if (currentBGM && !isMuted) {
+            currentBGM.play().catch((err) => {
+                console.log("🎵 상호작용 대기 중 (클릭 시 자동 재생됩니다)");
             });
         }
     }
 
-    btnSound.addEventListener('click', () => {
+    btnSound.addEventListener('click', (e) => {
+        e.stopPropagation();
         isMuted = !isMuted;
         btnSound.innerText = isMuted ? '🔇' : '🔊';
 
