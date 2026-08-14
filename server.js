@@ -10,7 +10,7 @@ app.use(express.static(__dirname));
 const rooms = {};
 const userRooms = {};
 
-// 📚 카테고리별 제시어 목록 (약 1,000개 이상의 쉬운 단어)
+// 📚 카테고리별 제시어 목록
 const WORDS_BY_CATEGORY = {
     '🐾 동물 & 곤충': [
         '호랑이', '사자', '기린', '코끼리', '얼룩말', '펭귄', '돌고래', '상어', '문어', '오징어',
@@ -121,7 +121,6 @@ const WORDS_BY_CATEGORY = {
     ]
 };
 
-// 💡 단어 평탄화 작업 ({ word: '호랑이', category: '🐾 동물 & 곤충' })
 const ALL_WORDS = [];
 Object.entries(WORDS_BY_CATEGORY).forEach(([category, words]) => {
     words.forEach(word => {
