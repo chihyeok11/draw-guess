@@ -316,12 +316,11 @@ io.on('connection', (socket) => {
 
         room.drawerIndex = nextDrawerIndex;
         room.isRoundOver = false;
-        room.hintGiven = false; // 💡 힌트 지급 여부 초기화
+        room.hintGiven = false;
 
         const drawer = room.players[room.drawerIndex];
         room.drawerId = drawer.id;
         
-        // 💡 단어 및 카테고리 선정
         const selectedObj = getRandomWord(room);
         room.currentWord = selectedObj.word;
         room.currentCategory = selectedObj.category;
@@ -347,7 +346,6 @@ io.on('connection', (socket) => {
             room.timeLeft--;
             io.to(roomCode).emit('timerUpdate', room.timeLeft);
 
-            // 💡 20초 남았을 때 카테고리 힌트 공개 (정답자가 아직 없고, 힌트가 지급 안 된 경우)
             if (room.timeLeft === 20 && !room.hintGiven && !room.isRoundOver) {
                 room.hintGiven = true;
                 io.to(roomCode).emit('chatMessage', { 
