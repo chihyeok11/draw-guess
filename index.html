@@ -487,6 +487,13 @@
     bgmLobby.volume = 0.25;
     bgmGame.volume = 0.25;
 
+    // 🔓 사용자가 화면 어디든 처음 클릭하면 차단된 브라우저 오디오 재생을 자동으로 해제합니다.
+    document.addEventListener('click', function unlockAudio() {
+        if (currentBGM && currentBGM.paused && !isMuted) {
+            currentBGM.play().catch(err => console.log("Audio play error:", err));
+        }
+    }, { once: true });
+
     function playBGM(type) {
         if (isMuted) return;
 
