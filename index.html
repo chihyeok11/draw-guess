@@ -87,13 +87,16 @@
         }
 
         .brand-header {
-            display: flex; align-items: center; gap: 8px;
-            font-family: 'Syne', sans-serif; font-size: clamp(18px, 4vw, 22px);
-            font-weight: 800; color: #1a1a2e; margin-bottom: 16px;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            margin-bottom: 16px;
         }
-        .brand-icon {
-            width: 30px; height: 30px; background: #39a084; border-radius: 8px;
-            display: flex; align-items: center; justify-content: center; color: white; font-size: 14px;
+
+        .brand-logo {
+            height: 54px;
+            width: auto;
+            object-fit: contain;
         }
 
         .hero-title {
@@ -332,8 +335,7 @@
 <div id="app">
     <div id="lobby-screen" class="screen active slide-in-right">
         <div class="brand-header">
-            <div class="brand-icon">✏️</div>
-            <span>draw.guess</span>
+            <img src="favicon.png" alt="draw.guess" class="brand-logo">
         </div>
         <h1 class="hero-title">Make a mark.<br><span class="highlight">Make a mess.</span></h1>
         <p class="hero-desc">실시간 그림 퀴즈 게임!<br>친구들과 방을 만들고 마음껏 그려보세요.</p>
@@ -475,7 +477,6 @@
         }, 350);
     }
 
-    // 🌟 캔버스 및 그리기 히스토리 완전 초기화 공통 함수
     function resetCanvas() {
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -553,7 +554,7 @@
             isMyTurn = false;
             isGameStarted = false;
             toolbar.classList.add('hidden');
-            resetCanvas(); // 🌟 퇴장 시 캔버스 초기화
+            resetCanvas();
         }
     });
 
@@ -709,7 +710,6 @@
         
         btnStart.style.display = isHostUser ? 'block' : 'none';
         
-        // 🌟 방 생성/입장 시 캔버스 리셋
         resetCanvas();
 
         setTimeout(() => {
@@ -863,7 +863,6 @@
     });
 
     socket.on('turnStart', ({ drawerId, hintMask, currentRound, maxRounds }) => {
-        // 🌟 drawerId가 없으면 대기 상태 처리
         if (!drawerId) {
             isGameStarted = false;
             isMyTurn = false;
@@ -984,7 +983,6 @@
         toolbar.classList.add('hidden');
         displayWord.innerText = '게임 종료';
 
-        // 🌟 게임 종료 즉시 캔버스 리셋
         resetCanvas();
 
         correctTitle.innerText = '🏆 게임 최종 결과';
@@ -994,7 +992,6 @@
 
         setTimeout(() => {
             correctOverlay.classList.remove('show');
-            // 🌟 결과 결과 확인창이 닫히면 방장 시작 버튼 복원
             if (isHostUser) {
                 btnStart.style.display = 'block';
             }
