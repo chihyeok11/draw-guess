@@ -486,7 +486,7 @@
     bgmLobby.volume = 0.25;
     bgmGame.volume = 0.25;
 
-    // 🔓 사용자가 화면을 터치/클릭할 때 브라우저의 오디오 잠금을 즉시 해제합니다.
+    // 🔓 사용자가 화면을 터치/클릭할 때 브라우저의 오디오 잠금을 해제합니다.
     function unlockAudio() {
         if (!isAudioUnlocked) {
             const p1 = bgmLobby.play();
@@ -785,6 +785,11 @@
             }
         }, 1000);
     }
+
+    // 🚨 [추가] 서버에서 보낸 에러 메시지(존재하지 않는 방 코드, 인원 초과 등)를 처리합니다.
+    socket.on('errorMessage', (msg) => {
+        alert(msg);
+    });
 
     socket.on('startCountdown', () => {
         runCountdown(() => {
