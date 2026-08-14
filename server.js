@@ -243,8 +243,9 @@ io.on('connection', (socket) => {
         const code = roomCode.toUpperCase();
         const room = rooms[code];
 
-        if (!room) return socket.emit('errorMessage', '존재하지 않는 방 코드입니다.');
-        if (room.players.length >= 8) return socket.emit('errorMessage', '방이 가득 찼습니다.');
+        if (!room) return socket.emit('errorMessage', '존재하지 않는 방 코드입니다. 다시 확인해 주세요!');
+        if (room.players.length >= 8) return socket.emit('errorMessage', '방이 인원 초과 상태입니다. (최대 8명)');
+        if (room.isPlaying) return socket.emit('errorMessage', '이미 게임이 진행 중인 방입니다.');
 
         room.players.push({ id: socket.id, nickname: userNick, score: 0 });
         userRooms[socket.id] = code;
