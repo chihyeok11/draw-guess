@@ -192,7 +192,6 @@
 
         #btn-start { height: 40px; background: #39a084; border-radius: 8px; font-size: 13px; margin-top: 8px; display: none; }
 
-        /* 💡 PC/모바일 완벽한 1:1 정사각형 고정 레이아웃 수정 */
         .canvas-area { 
             flex: 1; display: flex; flex-direction: column; 
             background: #f4f0e6; position: relative; min-width: 0; min-height: 0;
@@ -205,7 +204,7 @@
             height: 100%;
             max-width: 100%;
             max-height: 100%;
-            aspect-ratio: 1 / 1 !important; /* 강제 정사각형 유지 */
+            aspect-ratio: 1 / 1 !important;
             background: #ffffff;
             box-shadow: 0 4px 16px rgba(0,0,0,0.06);
             border-radius: 8px;
@@ -279,7 +278,6 @@
         }
 
         @media (min-width: 769px) {
-            /* PC 화면에서 높이 대비 너비 제한을 걸어 정사각형이 찌그러지지 않도록 제어 */
             .canvas-wrapper {
                 max-height: calc(100% - 60px);
                 max-width: calc(100% - 20px);
@@ -477,6 +475,15 @@
         }, 350);
     }
 
+    // 🌟 캔버스 및 그리기 히스토리 완전 초기화 공통 함수
+    function resetCanvas() {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        canvasHistory = [];
+        historyStep = -1;
+        saveCanvasState();
+    }
+
     function resizeCanvas() {
         if (!canvasWrapper || canvasWrapper.clientWidth === 0) return;
         
@@ -546,6 +553,7 @@
             isMyTurn = false;
             isGameStarted = false;
             toolbar.classList.add('hidden');
+            resetCanvas(); // 🌟 퇴장 시 캔버스 초기화
         }
     });
 
@@ -701,9 +709,11 @@
         
         btnStart.style.display = isHostUser ? 'block' : 'none';
         
+        // 🌟 방 생성/입장 시 캔버스 리셋
+        resetCanvas();
+
         setTimeout(() => {
             resizeCanvas();
-            saveCanvasState();
         }, 50);
     });
 
@@ -853,6 +863,17 @@
     });
 
     socket.on('turnStart', ({ drawerId, hintMask, currentRound, maxRounds }) => {
+        // 🌟 drawerId가 없으면 대기 상태 처리
+        if (!drawerId) {
+            isGameStarted = false;
+            isMyTurn = false;
+            toolbar.classList.add('hidden');
+            if (isHostUser) btnStart.style.display = 'block';
+            displayWord.innerText = '대기 중...';
+            resetCanvas();
+            return;
+        }
+
         isGameStarted = true;
         btnStart.style.display = 'none';
         
@@ -868,11 +889,7 @@
         const roundText = (currentRound && maxRounds) ? ` [${currentRound}/${maxRounds}라운드]` : '';
         displayWord.innerText = isMyTurn ? `단어 확인 중...${roundText}` : `${hintMask}${roundText}`;
         
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        canvasHistory = [];
-        historyStep = -1;
-        saveCanvasState();
+        resetCanvas();
         setTimeout(resizeCanvas, 50);
     });
 
@@ -913,9 +930,7 @@
     });
 
     socket.on('clearCanvas', () => {
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        saveCanvasState();
+        resetCanvas();
     });
 
     socket.on('chatMessage', (data) => {
@@ -969,6 +984,9 @@
         toolbar.classList.add('hidden');
         displayWord.innerText = '게임 종료';
 
+        // 🌟 게임 종료 즉시 캔버스 리셋
+        resetCanvas();
+
         correctTitle.innerText = '🏆 게임 최종 결과';
         correctText.innerText = winner ? `최종 우승자: ${winner.nickname} (${winner.score}점)` : '공동 우승 또는 무승부';
         correctWord.innerText = '';
@@ -976,6 +994,7 @@
 
         setTimeout(() => {
             correctOverlay.classList.remove('show');
+            // 🌟 결과 결과 확인창이 닫히면 방장 시작 버튼 복원
             if (isHostUser) {
                 btnStart.style.display = 'block';
             }
