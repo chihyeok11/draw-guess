@@ -143,8 +143,8 @@ function handleLeaveRoom(socket) {
                             text: '⚠️ 인원이 부족하여 게임이 중단되었습니다. 모든 점수가 초기화됩니다.' 
                         });
 
-                        io.to(roomCode).emit('turnStart', { drawerId: null, hintMask: '대기 중...', currentRound: 0, maxRounds: 10 });
                         io.to(roomCode).emit('clearCanvas');
+                        io.to(roomCode).emit('turnStart', { drawerId: null, hintMask: '대기 중...', currentRound: 0, maxRounds: 10 });
                         io.to(roomCode).emit('timerUpdate', 0);
                     } else if (disconnectedPlayer.id === room.drawerId) {
                         if (room.timer) clearInterval(room.timer);
@@ -251,21 +251,25 @@ io.on('connection', (socket) => {
             if (room.timer) clearInterval(room.timer);
             room.isPlaying = false;
             room.currentRound = 0;
+            room.drawerId = null;
 
             // 최고 점수 우승자 선정
             let winner = room.players.reduce((prev, current) => (prev.score > current.score) ? prev : current);
 
+            // 💡 1. 게임 종료 시 모든 클라이언트 캔버스 지우기 전송
+            io.to(roomCode).emit('clearCanvas');
+
+            // 💡 2. 게임 종료 이벤트 수신
             io.to(roomCode).emit('gameEnded', { winner });
             io.to(roomCode).emit('chatMessage', { system: true, text: `🏆 ${room.maxRounds}라운드가 종료되었습니다! 최종 우승자: ${winner.nickname}` });
             
-            // 💡 정상적으로 게임이 종료되었을 때 모든 플레이어 점수 초기화
+            // 점수 및 그리기 상태 초기화
             room.players.forEach(p => {
                 p.isDrawing = false;
                 p.score = 0;
             });
             
             io.to(roomCode).emit('updatePlayers', { players: room.players, hostId: room.hostId });
-            io.to(roomCode).emit('turnStart', { drawerId: null, hintMask: '게임 종료', currentRound: room.maxRounds, maxRounds: room.maxRounds });
             return;
         }
 
