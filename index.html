@@ -160,6 +160,20 @@
         }
         .timer-box { font-size: 13px; font-weight: 800; color: #39a084; }
         
+        /* 🔊 음소거 버튼 스타일 */
+        .btn-sound {
+            background: #f0ece1;
+            border: 1px solid #dcd7c9;
+            border-radius: 8px;
+            padding: 4px 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-sound:hover {
+            background: #e2ded4;
+        }
+
         .btn-leave {
             background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5;
             padding: 5px 9px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; transition: background 0.2s;
@@ -366,6 +380,8 @@
             </div>
             <div class="word-box" id="display-word">대기 중...</div>
             <div class="header-right">
+                <!-- 🔊 음악 음소거 토글 버튼 -->
+                <button class="btn-sound" id="btn-sound" title="음악 켜기/끄기">🔊</button>
                 <div class="timer-box" id="display-timer">60초</div>
             </div>
         </header>
@@ -414,6 +430,10 @@
     </div>
 </div>
 
+<!-- 🎵 배경음악 오디오 태그 -->
+<audio id="bgm-lobby" src="lobby.mp3" loop></audio>
+<audio id="bgm-game" src="game.mp3" loop></audio>
+
 <script src="/socket.io/socket.io.js"></script>
 <script>
     const socket = io();
@@ -455,6 +475,49 @@
     const correctWord = document.getElementById('correct-word');
     const countdownOverlay = document.getElementById('countdown-overlay');
     const countdownNum = document.getElementById('countdown-num');
+
+    // 🎵 사운드 제어 요소 및 상태 변수
+    const bgmLobby = document.getElementById('bgm-lobby');
+    const bgmGame = document.getElementById('bgm-game');
+    const btnSound = document.getElementById('btn-sound');
+
+    let isMuted = false;
+    let currentBGM = null;
+
+    bgmLobby.volume = 0.25;
+    bgmGame.volume = 0.25;
+
+    function playBGM(type) {
+        if (isMuted) return;
+
+        let targetBGM = (type === 'lobby') ? bgmLobby : (type === 'game') ? bgmGame : null;
+
+        if (currentBGM === targetBGM && currentBGM && !currentBGM.paused) return;
+
+        if (currentBGM) {
+            currentBGM.pause();
+            currentBGM.currentTime = 0;
+        }
+
+        currentBGM = targetBGM;
+
+        if (currentBGM) {
+            currentBGM.play().catch(() => {
+                console.log("사용자 상호작용 후 음악이 재생됩니다.");
+            });
+        }
+    }
+
+    btnSound.addEventListener('click', () => {
+        isMuted = !isMuted;
+        btnSound.innerText = isMuted ? '🔇' : '🔊';
+
+        if (isMuted) {
+            if (currentBGM) currentBGM.pause();
+        } else {
+            if (currentBGM) currentBGM.play().catch(() => {});
+        }
+    });
 
     let currentMode = 'create';
     let myNickname = '';
@@ -555,6 +618,12 @@
             isGameStarted = false;
             toolbar.classList.add('hidden');
             resetCanvas();
+
+            if (currentBGM) {
+                currentBGM.pause();
+                currentBGM.currentTime = 0;
+                currentBGM = null;
+            }
         }
     });
 
@@ -715,6 +784,8 @@
         setTimeout(() => {
             resizeCanvas();
         }, 50);
+
+        playBGM('lobby');
     });
 
     function getNormalizedPos(e) {
@@ -870,6 +941,7 @@
             if (isHostUser) btnStart.style.display = 'block';
             displayWord.innerText = '대기 중...';
             resetCanvas();
+            playBGM('lobby');
             return;
         }
 
@@ -890,6 +962,8 @@
         
         resetCanvas();
         setTimeout(resizeCanvas, 50);
+
+        playBGM('game');
     });
 
     socket.on('yourWord', (word) => { 
@@ -989,6 +1063,8 @@
         correctText.innerText = winner ? `최종 우승자: ${winner.nickname} (${winner.score}점)` : '공동 우승 또는 무승부';
         correctWord.innerText = '';
         correctOverlay.classList.add('show');
+
+        playBGM('lobby');
 
         setTimeout(() => {
             correctOverlay.classList.remove('show');
